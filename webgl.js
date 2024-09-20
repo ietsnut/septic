@@ -1,28 +1,3 @@
-let aspectRatio;
-let currentRotation = [0, 1];
-let currentScale = [1.0, 1.0];
-
-// Vertex information
-
-let vertexArray;
-let vertexBuffer;
-let vertexNumComponents;
-let vertexCount;
-
-// Rendering data shared with the
-// scalers.
-
-let uScalingFactor;
-let uGlobalColor;
-let uRotationVector;
-let aVertexPosition;
-
-// Animation timing
-
-let currentAngle;
-let previousTime = 0.0;
-let degreesPerSecond = 90.0;
-
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
@@ -66,36 +41,6 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.log(gl.getProgramInfoLog(program));
 }
 
-aspectRatio = canvas.width / canvas.height;
-currentRotation = [0, 1];
-currentScale = [1.0, aspectRatio];
-
-vertexArray = new Float32Array([
-    -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5,
-]);
-
-vertexBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, vertexArray, gl.STATIC_DRAW);
-
-vertexNumComponents = 2;
-vertexCount = vertexArray.length / vertexNumComponents;
-
-currentAngle = 0.0;
-
-function shader(type, source) {
-    var id = gl.createShader(type);
-    gl.shaderSource(id, source);
-    gl.compileShader(id);
-    if (!gl.getShaderParameter(id, gl.COMPILE_STATUS)) {
-        console.log('Error compiling ' + type + ' shader:');
-        console.log(gl.getShaderInfoLog(id));
-    }
-    if (id) {
-        gl.attachShader(program, id);
-    }
-}
-
 window.addEventListener('click', () => {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().then(() => {
@@ -108,11 +53,52 @@ window.addEventListener('click', () => {
 
 window.addEventListener('resize',           resize);
 window.addEventListener("fullscreenchange", resize);
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+function shader(type, source) {
+    var id = gl.createShader(type);
+    gl.shaderSource(id, source);
+    gl.compileShader(id);
+    if (!gl.getShaderParameter(id, gl.COMPILE_STATUS)) {
+        console.log('Error compiling ' + type + ' shader:');
+        console.log(gl.getShaderInfoLog(id));
+    }
+    gl.attachShader(program, id);
+}
 
 function resize() {
     canvas.width    = window.innerWidth;
     canvas.height   = window.innerHeight;
+    ratio           = window.innerWidth / window.innerHeight;
 }
+
+class Entity {
+    constructor(x, y, vertex) {
+        this.x      = x;
+        this.y      = y;
+        this.vertex = vertex;
+        this.buffer = gl.createBuffer();
+        this.count  = vertex.length / 2;
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertex, gl.STATIC_DRAW);
+    }
+}
+
+cube = new Entity(0, 0, new Float32Array([
+    -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5,
+]));
+
+let uScalingFactor;
+let uGlobalColor;
+let uRotationVector;
+let aVertexPosition;
+
+let currentAngle;
+let previousTime = 0.0;
+let degreesPerSecond = 90.0;
+
+currentRotation = [0, 1];
+currentAngle = 0.0;
 
 function draw() {
 
@@ -126,6 +112,8 @@ function draw() {
 
     gl.useProgram(program);
 
+    currentScale = [1.0, ratio];
+
     uScalingFactor  = gl.getUniformLocation(program, "uScalingFactor");
     uGlobalColor    = gl.getUniformLocation(program, "uGlobalColor");
     uRotationVector = gl.getUniformLocation(program, "uRotationVector");
@@ -134,21 +122,21 @@ function draw() {
     gl.uniform2fv(uRotationVector, currentRotation);
     gl.uniform4fv(uGlobalColor, [1.0, 1.0, 1.0, 1.0]);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cube.buffer);
 
     aVertexPosition = gl.getAttribLocation(program, "aVertexPosition");
 
     gl.enableVertexAttribArray(aVertexPosition);
     gl.vertexAttribPointer(
         aVertexPosition,
-        vertexNumComponents,
+        2,
         gl.FLOAT,
         false,
         0,
         0,
     );
 
-    gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+    gl.drawArrays(gl.TRIANGLES, 0, cube.count);
 
     requestAnimationFrame((currentTime) => {
         const deltaAngle = ((currentTime - previousTime) / 1000.0) * degreesPerSecond;
@@ -156,6 +144,7 @@ function draw() {
         previousTime = currentTime;
         draw();
     });
+
 }
 
 resize();

@@ -1,11 +1,10 @@
-body, html {
+body, html, canvas {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden;
     height: 100%;
     width: 100%;
-}
-
-canvas {
-    display: block;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
