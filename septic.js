@@ -1,3 +1,7 @@
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+    throw new Error("Mobile is not supported.");
+}
+
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
@@ -109,21 +113,24 @@ gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
 
 class Entity {
-    constructor(x, y, t) {
+
+    constructor(id, x, y, t) {
+        this.id = id;
         this.x = x;
         this.y = y;
         this.t = t;
     }
+
 }
 
 class Texture {
 
     constructor(gl, data, width, height) {
 
-        this.width = width;
-        this.height = height;
-        this.texture = gl.createTexture();
-        this.buffer = new Uint8Array(Math.ceil((width * height) / 8));
+        this.width      = width;
+        this.height     = height;
+        this.texture    = gl.createTexture();
+        this.buffer     = new Uint8Array(Math.ceil((width * height) / 8));
 
         for (let i = 0; i < data.length; i += 8) {
             let packedByte = 0;
@@ -168,7 +175,7 @@ const texture = new Texture(gl, [
 var cubes = [];
 
 for (var i = -4; i < 5; i++) {
-    cubes.push(new Entity(i, 0, texture));
+    cubes.push(new Entity(i + 4, i, 0, texture));
 }
 
 let rotationState = 0; // 0: 0°, 1: 90°, 2: 180°, 3: 270°
@@ -219,17 +226,22 @@ function draw(now) {
 
 }
 
-/*
+
 window.addEventListener('click', () => {
+    let params = `scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,
+    width=600,height=300,left=100,top=100`;
+
+    open('/', 'test', params);
+    /*
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().then(() => {
             resize();
         }).catch(err => {
             console.error(`Error attempting to enable full-screen mode: ${err.message}`);
         });
-    }
+    }*/
 });
-*/
+
 
 window.addEventListener("resize",           resize);
 window.addEventListener("fullscreenchange", resize);
