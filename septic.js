@@ -16,41 +16,38 @@ varying vec2 uv;
 uniform vec2 s;
 uniform vec2 p;
 
-uniform int uRotationState;
-uniform bool uFlipHorizontal;
-uniform bool uFlipVertical;
+uniform int r;
+uniform bool fx;
+uniform bool fy;
+
+uniform vec2 tp;
 
 void main() {
-
-    vec2 rotatedPosition = v;
-
-    rotatedPosition *= 0.1;
-
-    if (uRotationState == 1) {
-        rotatedPosition = vec2(-rotatedPosition.y, rotatedPosition.x); // 90 degrees
-    } else if (uRotationState == 2) {
-        rotatedPosition = vec2(-rotatedPosition.x, -rotatedPosition.y); // 180 degrees
-    } else if (uRotationState == 3) {
-        rotatedPosition = vec2(rotatedPosition.y, -rotatedPosition.x); // 270 degrees
+    vec2 pos = v;
+    pos.y = -pos.y;
+    pos *= 0.1;
+    if (r == 1) {
+        pos = vec2(pos.y, -pos.x);
+    } else if (r == 2) {
+        pos = vec2(-pos.x, -pos.y);
+    } else if (r == 3) {
+        pos = vec2(-pos.y, pos.x);
     }
-
-    if (uFlipHorizontal) {
-        rotatedPosition.x = -rotatedPosition.x;
+    if (fx) {
+        pos.x = -pos.x;
     }
-
-    if (uFlipVertical) {
-        rotatedPosition.y = -rotatedPosition.y;
+    if (fy) {
+        pos.y = -pos.y;
     }
-
-    vec2 scaledPosition = rotatedPosition * s;
-    scaledPosition += vec2(p.x * 0.2, p.y * 0.2);
-    gl_Position = vec4(scaledPosition, 0.0, 1.0);
-    uv = u;
-
+    pos = pos * s;
+    pos = pos + vec2(p.x * 0.2, p.y * 0.2);
+    gl_Position = vec4(pos, 0.0, 1.0);
+    vec2 tile = vec2(10.0, 10.0) / 40.0;
+    uv = (tp * tile) + (u * tile);
 }
+
 `
 );
-
 
 shader(gl.FRAGMENT_SHADER,
 `
@@ -107,14 +104,16 @@ gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
 
 class Entity {
-
-    constructor(id, x, y, t) {
+    fx = false;
+    fy = false;
+    r  = 0;
+    constructor(id, x, y, tx, ty) {
         this.id = id;
-        this.x = x;
-        this.y = y;
-        this.t = t;
+        this.x  = x;
+        this.y  = y;
+        this.tx = tx;
+        this.ty = ty;
     }
-
 }
 
 class Texture {
@@ -156,25 +155,23 @@ class Texture {
 }
 
 const texture = new Texture(gl, [
-    0, 1, 1, 0, 0, 1, 1, 1,
-    1, 0, 0, 1, 1, 0, 0, 1,
-    1, 0, 0, 1, 1, 0, 0, 1,
-    0, 1, 1, 0, 0, 1, 1, 0,
-    0, 1, 1, 0, 0, 1, 1, 0,
-    1, 0, 0, 1, 1, 0, 0, 1,
-    1, 0, 0, 1, 1, 0, 0, 1,
-    0, 1, 1, 0, 0, 1, 1, 0,
-], 8, 8);
+    0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0
+], 40, 40);
 
 var cubes = [];
 
-for (var i = -4; i < 5; i++) {
-    cubes.push(new Entity(i + 4, i, 1, texture));
+for (var i = -2; i < 3; i++) {
+    cubes.push(new Entity(i + 4,
+        i * 2, 0, 
+        (i + 2), 1));
 }
 
-let rotationState = 0; // 0: 0°, 1: 90°, 2: 180°, 3: 270°
-let flipHorizontal = false;
-let flipVertical = false;
+const r     = gl.getUniformLocation(program, "r");
+const fx    = gl.getUniformLocation(program, "fx");
+const fy    = gl.getUniformLocation(program, "fy");
+const p     = gl.getUniformLocation(program, "p");
+const tp    = gl.getUniformLocation(program, "tp");
+const s     = gl.getUniformLocation(program, "s");
 
 function draw(now) {
 
@@ -182,34 +179,23 @@ function draw(now) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.useProgram(program);
-
-    // Bind texture and set the sampler uniform
-
+    texture.bind(gl, 0);
 
     for (var i = 0; i < cubes.length; i++) {
 
         let cube = cubes[i];
-
-        cube.t.bind(gl, 0);
-        const s = gl.getUniformLocation(program, "s");
+        
         if (window.ratio > 1) {
             gl.uniform2f(s, 1.0 / window.ratio, 1.0);
         } else {
             gl.uniform2f(s, 1.0, window.ratio);
         }
 
-        const uRotationState = gl.getUniformLocation(program, "uRotationState");
-        gl.uniform1i(uRotationState, rotationState);
-
-        const uFlipHorizontal = gl.getUniformLocation(program, "uFlipHorizontal");
-        gl.uniform1i(uFlipHorizontal, flipHorizontal ? 1 : 0);
-
-        const uFlipVertical = gl.getUniformLocation(program, "uFlipVertical");
-        gl.uniform1i(uFlipVertical, flipVertical ? 1 : 0);
-
-        const p = gl.getUniformLocation(program, "p");
-        gl.uniform2f(p, cube.x, cube.y);
+        gl.uniform2f(tp,    cube.tx, cube.ty);
+        gl.uniform1i(r,     cube.r);
+        gl.uniform1i(fx,    cube.fx ? 1 : 0);
+        gl.uniform1i(fy,    cube.fy ? 1 : 0);
+        gl.uniform2f(p,     cube.x, cube.y);
 
         gl.enableVertexAttribArray(0);
         gl.enableVertexAttribArray(1);
@@ -250,15 +236,16 @@ function resize() {
 }
 
 document.addEventListener('keydown', (event) => {
+    var cube = cubes[0];
     switch (event.key) {
-        case 'r': // Rotate right
-            rotationState = (rotationState + 1) % 4; // 0, 1, 2, 3
+        case 'r':
+            cube.r = (cube.r + 1) % 4;
             break;
-        case 'h': // Flip horizontally
-            flipHorizontal = !flipHorizontal;
+        case 'h':
+            cube.fx = !cube.fx;
             break;
-        case 'v': // Flip vertically
-            flipVertical = !flipVertical;
+        case 'v':
+            cube.fy = !cube.fy;
             break;
     }
     requestAnimationFrame(draw);
