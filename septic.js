@@ -1,5 +1,5 @@
 if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
-    throw new Error("Mobile is not supported.");
+    //throw new Error("Mobile is not supported.");
 }
 
 const canvas    = document.querySelector('canvas');
