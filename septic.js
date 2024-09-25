@@ -13,20 +13,19 @@ attribute vec2 u;
 
 varying vec2 uv;
 
-uniform vec2 s;  // Scale
-uniform vec2 p;  // Position Offset
+uniform vec2 s;
+uniform vec2 p;
 
-uniform int uRotationState;  // 0: 0°, 1: 90°, 2: 180°, 3: 270°
+uniform int uRotationState;
 uniform bool uFlipHorizontal;
 uniform bool uFlipVertical;
 
 void main() {
+
     vec2 rotatedPosition = v;
 
-    // Apply scaling factor to the vertex position
     rotatedPosition *= 0.1;
 
-    // Apply rotation based on the rotation state
     if (uRotationState == 1) {
         rotatedPosition = vec2(-rotatedPosition.y, rotatedPosition.x); // 90 degrees
     } else if (uRotationState == 2) {
@@ -35,93 +34,39 @@ void main() {
         rotatedPosition = vec2(rotatedPosition.y, -rotatedPosition.x); // 270 degrees
     }
 
-    // Apply flipping horizontally and vertically
     if (uFlipHorizontal) {
         rotatedPosition.x = -rotatedPosition.x;
     }
+
     if (uFlipVertical) {
         rotatedPosition.y = -rotatedPosition.y;
     }
 
-    // Apply scaling and position offset
     vec2 scaledPosition = rotatedPosition * s;
     scaledPosition += vec2(p.x * 0.2, p.y * 0.2);
-
     gl_Position = vec4(scaledPosition, 0.0, 1.0);
-
-    // Pass texture coordinates to the fragment shader
     uv = u;
+
 }
 `
 );
 
 
-/*
 shader(gl.FRAGMENT_SHADER,
 `
 precision lowp float;
 
 varying vec2 uv;
 
-uniform sampler2D uSampler; // Packed texture
-uniform float w; // Width of the image in pixels
-
-// Function to extract a single bit from the packed texture
-float getTextureValue(sampler2D s) {
-    // Fetch the packed byte from the texture
-    float packedByte = texture2D(s, uv).r * 255.0;
-    
-    // Calculate the x position in terms of pixels
-    float pixelX = uv.x * w;
-    
-    // Determine which bit within the byte we need (from 0 to 7)
-    float bitIndex = mod(floor(pixelX), 8.0);
-    
-    // Extract the bit by shifting the byte right and checking the least significant bit
-    float bitValue = floor(packedByte / exp2(7.0 - bitIndex));
-    
-    // Return 1.0 for white (bit is 1) and 0.0 for black (bit is 0)
-    return step(0.5, mod(bitValue, 2.0));
-}
-
-void main() {
-    // Use the unpacked texture value as the color
-    gl_FragColor = vec4(vec3(getTextureValue(uSampler)), 1.0);
-}
-`
-);
-*/
-
-
-shader(gl.FRAGMENT_SHADER,
-`
-precision highp float;
-
-varying vec2 uv;
-
-uniform sampler2D uSampler; // Packed texture
-uniform float w; // Width of the image in pixels
+uniform sampler2D samp;
+uniform float w;
 
 int getTextureColor(sampler2D s) {
-    // Read the luminance value (0 to 255) from the packed texture
-    float luminance = texture2D(s, uv).r * 255.1;
-
-    // Calculate the pixel's index along the x-axis
-    float pixelIndex = uv.x * w; // The current pixel index (float)
-
-    // Determine which byte contains the pixel
-    int bitPosition = int(mod(pixelIndex, 8.0)); // Position within the byte (0-7)
-
-    // Simulate bitwise shift and AND operations using division and mod
-    float shiftedValue = floor(luminance / pow(2.0, float(7 - bitPosition))); // Shift right
-    int bit = int(mod(shiftedValue, 2.0)); // Isolate the least significant bit
-
-    return bit; // Return the extracted bit
+    return int(mod(floor(texture2D(s, uv).r * 255.1 / pow(2.0, float(7 - int(mod(uv.x * w, 8.0))))), 2.0));
 }
 
 void main() {
-    int albedo = getTextureColor(uSampler);
-    gl_FragColor = vec4(vec3(albedo), 1.0); // Normalize the color to 0 (black) or 1 (white)
+    gl_FragColor = vec4(vec3(getTextureColor(samp)), 1.0);
 }
 
 `
@@ -205,13 +150,13 @@ class Texture {
         gl.activeTexture(gl.TEXTURE0 + unit);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.uniform1f(gl.getUniformLocation(program, "w"), texture.width);
-        gl.uniform1i(gl.getUniformLocation(program, "uSampler"), 0);
+        gl.uniform1i(gl.getUniformLocation(program, "samp"), 0);
     }
 
 }
 
 const texture = new Texture(gl, [
-    0, 1, 1, 0, 0, 1, 1, 0,
+    0, 1, 1, 0, 0, 1, 1, 1,
     1, 0, 0, 1, 1, 0, 0, 1,
     1, 0, 0, 1, 1, 0, 0, 1,
     0, 1, 1, 0, 0, 1, 1, 0,
@@ -224,7 +169,7 @@ const texture = new Texture(gl, [
 var cubes = [];
 
 for (var i = -4; i < 5; i++) {
-    cubes.push(new Entity(i + 4, i, 0, texture));
+    cubes.push(new Entity(i + 4, i, 1, texture));
 }
 
 let rotationState = 0; // 0: 0°, 1: 90°, 2: 180°, 3: 270°
