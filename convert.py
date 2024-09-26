@@ -10,17 +10,26 @@ def image_to_js_texture(image_path):
         # Get image dimensions
         width, height = img.size
         
+        if width % 16 != 0 or height % 16 != 0:
+            raise ValueError("Image dimensions must be multiples of 16.")
+        
         # Threshold the image (automatically setting 1 for white and 0 for black)
         threshold = 128
         binary_pixels = [(1 if pixel >= threshold else 0) for pixel in img.getdata()]
         
-        # Format the pixel data as a string for JavaScript
-        js_array = ", ".join(map(str, binary_pixels))
+        # Format the pixel data with newlines for proper row/column structure
+        rows = []
+        for y in range(height):
+            row = binary_pixels[y * width : (y + 1) * width]
+            rows.append(", ".join(map(str, row)))
+        
+        # Join all rows with newline characters to format it properly
+        formatted_js_array = ",\n    ".join(rows)
         
         # Generate the JavaScript constant
-        js_code = f"""const texture = new Texture(gl, [
-    {js_array}
-], {width}, {height});
+        js_code = f"""const tileset = [
+    {formatted_js_array}
+];
 """
         return js_code
 
