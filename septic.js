@@ -205,15 +205,15 @@ window.addEventListener("fullscreenchange", resize);
 //document.addEventListener("contextmenu", e => e.preventDefault());
 
 function resize() {
-    canvas.width    = window.innerWidth;
-    canvas.height   = window.innerHeight;
+    canvas.width    = window.innerWidth * window.devicePixelRatio;
+    canvas.height   = window.innerHeight* window.devicePixelRatio;
     window.ratio    = window.innerWidth / window.innerHeight;
     if (window.ratio > 1) {
         gl.uniform2f(s, 1.0 / window.ratio, 1.0);
     } else {
         gl.uniform2f(s, 1.0, window.ratio);
     }
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.viewport(0, 0, window.innerWidth * window.devicePixelRatio, window.innerHeight* window.devicePixelRatio);
     document.title = "R: " + window.devicePixelRatio + ", PR: " + window.ratio;
     requestAnimationFrame(draw);
 }
