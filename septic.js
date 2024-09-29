@@ -1,93 +1,80 @@
-if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-    // throw new Error("Mobile is not supported.");
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+    //throw new Error("Mobile is not supported.");
 }
 
-const canvas = document.querySelector('canvas');
-const gl = canvas.getContext("webgl2");
-const program = gl.createProgram();
+const canvas    = document.querySelector('canvas');
+const gl        = canvas.getContext("webgl");
+const program   = gl.createProgram();
 
-shader(gl.VERTEX_SHADER, `#version 300 es
-    precision lowp float;
-    precision lowp int;
+shader(gl.VERTEX_SHADER,
+`
+precision lowp float;
+precision lowp int;
 
-    const vec2 positions[4] = vec2[4](
-        vec2(-1.0,  1.0),
-        vec2( 1.0,  1.0),
-        vec2(-1.0, -1.0),
-        vec2( 1.0, -1.0)
-    );
+attribute vec2 v;
+attribute vec2 u;
 
-    const vec2 uvs[4] = vec2[4](
-        vec2(0.0, 1.0),
-        vec2(1.0, 1.0),
-        vec2(0.0, 0.0),
-        vec2(1.0, 0.0)
-    );
+varying vec2 uv;
 
-    out vec2 uv;
+uniform vec2 s;
+uniform vec2 p;
 
-    uniform vec2 s;
-    uniform vec2 p;
-    uniform int r;
-    uniform bool fx;
-    uniform bool fy;
-    uniform vec2 tp;
+uniform int r;
+uniform bool fx;
+uniform bool fy;
 
-    void main() {
+uniform vec2 tp;
 
-        vec2 pos = positions[gl_VertexID];
-        uv = uvs[gl_VertexID];
-
-        // Apply transformations for rotation and flipping
+void main() {
+    vec2 pos = v;
+    pos.y = -pos.y;
+    pos *= 0.1;
+    if (r == 1) {
+        pos = vec2(pos.y, -pos.x);
+    } else if (r == 2) {
+        pos = vec2(-pos.x, -pos.y);
+    } else if (r == 3) {
+        pos = vec2(-pos.y, pos.x);
+    }
+    if (fx) {
+        pos.x = -pos.x;
+    }
+    if (fy) {
         pos.y = -pos.y;
-        pos *= 0.1;
-        if (r == 1) {
-            pos = vec2(pos.y, -pos.x);
-        } else if (r == 2) {
-            pos = vec2(-pos.x, -pos.y);
-        } else if (r == 3) {
-            pos = vec2(-pos.y, pos.x);
-        }
-        if (fx) {
-            pos.x = -pos.x;
-        }
-        if (fy) {
-            pos.y = -pos.y;
-        }
-        
-        // Scale and translate
-        pos = pos * s;
-        pos = pos + vec2(p.x * 0.2, p.y * 0.2);
-        gl_Position = vec4(pos, 0.0, 1.0);
-
-        // Tile UV calculation
-        vec2 tile = vec2(16.0, 16.0) / 256.0;
-        uv = (tp * tile) + (uv * tile);
     }
-`);
+    pos = pos * s;
+    pos = pos + vec2(p.x * 0.2, p.y * 0.2);
+    gl_Position = vec4(pos, 0.0, 1.0);
+    vec2 tile = vec2(16.0, 16.0) / 256.0;
+    uv = (tp * tile) + (u * tile);
+}
 
-shader(gl.FRAGMENT_SHADER, `#version 300 es
-    precision lowp float;
-    precision lowp int;
+`
+);
 
-    in vec2 uv;
-    out vec4 fragColor;
+shader(gl.FRAGMENT_SHADER,
+`
+precision lowp float;
+precision lowp int;
 
-    uniform sampler2D ts;
-    uniform float w;
+varying vec2 uv;
 
-    int t() {
-        float tx = uv.x * w;
-        return (int(texture(ts, vec2(float(int(tx / 8.0)) / (w / 8.0), uv.y)).r * 255.0) >> (7 - int(tx) & 7)) & 1;
-    }
+uniform sampler2D ts;
+uniform float w;
 
-    void main() {
-        fragColor = vec4(vec3(t()), 1.0);
-    }
-`);
+int albedo() {
+    return int(mod(floor(texture2D(ts, uv).r * 255.1 / pow(2.0, float(7 - int(mod(uv.x * w, 8.0))))), 2.0));
+}
+
+void main() {
+    gl_FragColor = vec4(vec3(albedo()), 1.0);
+}
+
+`
+);
 
 function shader(type, source) {
-    const id = gl.createShader(type);
+    var id = gl.createShader(type);
     gl.shaderSource(id, source);
     gl.compileShader(id);
     if (!gl.getShaderParameter(id, gl.COMPILE_STATUS)) {
@@ -103,6 +90,20 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 }
 
 gl.useProgram(program);
+
+vb = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+gl.bufferData(gl.ARRAY_BUFFER, new Int8Array([-1, 1, 1, 1, 1, -1, -1, -1]), gl.STATIC_DRAW);
+gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, 0);
+
+ub = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, ub);
+gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array([0, 1, 1, 1, 1, 0, 0, 0]), gl.STATIC_DRAW);
+gl.vertexAttribPointer(1, 2, gl.UNSIGNED_BYTE, false, 0, 0);
+
+ib = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
 
 const tileset = [
     0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -363,9 +364,9 @@ const tileset = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ];
 
-const tm = Math.sqrt(tileset.length);
-const t = gl.createTexture();
-const tb = new Uint8Array(tileset.length / 8);
+const tm    = Math.sqrt(tileset.length);
+const t     = gl.createTexture();
+const tb    = new Uint8Array((tileset.length / 8));
 
 for (let i = 0; i < tileset.length; i += 8) {
     let packedByte = 0;
@@ -416,40 +417,60 @@ const p     = gl.getUniformLocation(program, "p");
 const tp    = gl.getUniformLocation(program, "tp");
 const s     = gl.getUniformLocation(program, "s");
 
+gl.enableVertexAttribArray(0);
+gl.enableVertexAttribArray(1);
+
 function draw(now) {
+
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    for (let i = 0; i < cubes.length; i++) {
+    for (var i = 0; i < cubes.length; i++) {
+
         let cube = cubes[i];
 
-        gl.uniform2f(tp, cube.tx, cube.ty);
-        gl.uniform1i(r, cube.r);
-        gl.uniform1i(fx, cube.fx ? 1 : 0);
-        gl.uniform1i(fy, cube.fy ? 1 : 0);
-        gl.uniform2f(p, cube.x, cube.y);
+        gl.uniform2f(tp,    cube.tx, cube.ty);
+        gl.uniform1i(r,     cube.r);
+        gl.uniform1i(fx,    cube.fx ? 1 : 0);
+        gl.uniform1i(fy,    cube.fy ? 1 : 0);
+        gl.uniform2f(p,     cube.x, cube.y);
 
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
+
     }
+
 }
 
 window.addEventListener('click', () => {
-    /* Fullscreen logic if needed */
+    /*
+    let params = `scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,
+    width=600,height=300,left=100,top=100`;
+
+    open('/', 'test', params);
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+            resize();
+        }).catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+    }*/
 });
 
-window.addEventListener("resize", resize);
+
+window.addEventListener("resize",           resize);
 window.addEventListener("fullscreenchange", resize);
+//document.addEventListener("contextmenu", e => e.preventDefault());
 
 function resize() {
-    canvas.width = window.innerWidth * window.devicePixelRatio;
-    canvas.height = window.innerHeight * window.devicePixelRatio;
-    window.ratio = window.innerWidth / window.innerHeight;
+    canvas.width    = window.innerWidth * window.devicePixelRatio;
+    canvas.height   = window.innerHeight* window.devicePixelRatio;
+    window.ratio    = window.innerWidth / window.innerHeight;
     if (window.ratio > 1) {
         gl.uniform2f(s, 1.0 / window.ratio, 1.0);
     } else {
         gl.uniform2f(s, 1.0, window.ratio);
     }
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.viewport(0, 0, window.innerWidth * window.devicePixelRatio, window.innerHeight* window.devicePixelRatio);
     document.title = "R: " + window.devicePixelRatio + ", PR: " + window.ratio;
     requestAnimationFrame(draw);
 }
