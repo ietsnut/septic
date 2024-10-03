@@ -5,7 +5,7 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
-const cell      = 0.05;
+const cell      = 100000;
 
 shader(gl.VERTEX_SHADER,
 `
@@ -18,22 +18,28 @@ attribute vec2 tcoord;
 varying vec2 uv;
 
 uniform vec2 scale;
-uniform vec2 position;
-
 uniform float tilesize;
 
 uniform vec2 tile;
+uniform vec2 position;
 
 void main() {
-
     vec2 cell = vec2(16.0, 16.0) / 256.0;
     uv = (tile * cell) + (tcoord * cell);
 
-    vec2 pos = vertex;
-    pos.y = -pos.y;
-    pos = (pos + (position * 2.0)) * tilesize * scale;
-    gl_Position = vec4(pos, 0.0, 1.0);
+    // Map vertex positions from -1..1 to 0..1
+    vec2 vPos = vertex * 0.5 + 0.5;
 
+    // Compute the pixel position of the vertex
+    vec2 pixelPos = (position * tilesize) + (vPos * tilesize);
+
+    // Convert pixel position to NDC coordinates
+    vec2 ndcPos = (pixelPos / scale) * 2.0 - 1.0;
+
+    // Flip Y coordinate (since WebGL's Y axis is inverted)
+    ndcPos.y = -ndcPos.y;
+
+    gl_Position = vec4(ndcPos, 0.0, 1.0);
 }
 
 `
@@ -54,7 +60,10 @@ int albedo() {
 }
 
 void main() {
-    gl_FragColor = vec4(vec3(albedo()), 1.0);
+    if (albedo() == 0) {
+        discard;
+    }
+    gl_FragColor = vec4(1.0);
 }
 
 `
@@ -130,82 +139,72 @@ class Entity {
 
 var grid = [];
 
-grid.push(new Entity(1, 1, 0, 0)); 
-grid.push(new Entity(2, 1, 5, 0)); 
+//grid.push(new Entity(1, 1, 0, 0)); 
+//grid.push(new Entity(0, 0, 5, 0)); 
 
 const tile      = gl.getUniformLocation(program, "tile");
-const scale     = gl.getUniformLocation(program, "scale");
 const tilesize  = gl.getUniformLocation(program, "tilesize");
+const scale     = gl.getUniformLocation(program, "scale");
 const position  = gl.getUniformLocation(program, "position");
 
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
 
 function draw(now) {
-
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     for (var i = 0; i < grid.length; i++) {
-
         let cube = grid[i];
-        gl.uniform2f(tile,      cube.tx, cube.ty);
-        gl.uniform2f(position,  cube.x,  cube.y);
+        gl.uniform2f(tile, cube.tx, cube.ty);
+        console.log(cube);
+        gl.uniform2f(position, cube.x, cube.y);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
-
     }
-
 }
-
-window.addEventListener('click', () => {
-    /*
-    let params = `scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,
-    width=600,height=300,left=100,top=100`;
-
-    open('/', 'test', params);
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
-            resize();
-        }).catch(err => {
-            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-        });
-    }*/
-});
-
 
 window.addEventListener("resize",           resize);
 window.addEventListener("fullscreenchange", resize);
 //document.addEventListener("contextmenu", e => e.preventDefault());
 
 function resize() {
-    canvas.width    = window.innerWidth * window.devicePixelRatio;
-    canvas.height   = window.innerHeight* window.devicePixelRatio;
-    window.ratio    = window.innerWidth / window.innerHeight;
-    if (window.ratio > 1) {
-        gl.uniform2f(scale, 1.0 / window.ratio, 1.0);
-    } else {
-        gl.uniform2f(scale, 1.0, window.ratio);
+    canvas.width = window.innerWidth * window.devicePixelRatio;
+    canvas.height = window.innerHeight * window.devicePixelRatio;
+    gl.uniform2f(scale, canvas.width, canvas.height);
+    gl.uniform1f(tilesize, 128.0);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    grid = [];
+
+    for (var x = 0; x < window.innerWidth * 2 / 128; x++) {
+        for (var y = 0; y < window.innerHeight * 2 / 128; y++) {
+            grid.push(new Entity(x, y, 2, 0)); 
+        }
     }
-    gl.uniform1f(tilesize, cell * window.ratio);
-    gl.viewport(0, 0, window.innerWidth * window.devicePixelRatio, window.innerHeight* window.devicePixelRatio);
-    document.title = "R: " + window.devicePixelRatio + ", PR: " + window.ratio;
+
     requestAnimationFrame(draw);
 }
 
+
 document.addEventListener('keydown', (event) => {
-    var player = grid[0];
     switch (event.key) {
         case 'w':
-            player.y += 1;
+            //player.y -= 1;
             break;
         case 'a':
-            player.x -= 1;
+            //player.x -= 1;
             break;
         case 's':
-            player.y -= 1;
+            //player.y += 1;
             break;
         case 'd':
-            player.x += 1;
+            //player.x += 1;
+            break;
+        case ' ':
+            console.log("chaning");
+            for (var i = grid.length - 1; i >= 0; i--) {
+                grid[i].ty = grid[i].ty == 0 ? 1 : 0;
+            }
             break;
     }
     requestAnimationFrame(draw);
