@@ -32,8 +32,7 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
-
-const cell      = 256;
+const cell      = 64;
 
 shader(gl.VERTEX_SHADER,
 `
@@ -54,22 +53,11 @@ uniform vec2 position;
 void main() {
     vec2 cell = vec2(16.0, 16.0) / 256.0;
     uv = (tile * cell) + (tcoord * cell);
-
-    // Map vertex positions from -1..1 to 0..1
-    vec2 vPos = vertex * 0.5 + 0.5;
-
-    // Compute the pixel position of the vertex
-    vec2 pixelPos = (position * tilesize) + (vPos * tilesize);
-
-    // Convert pixel position to NDC coordinates
-    vec2 ndcPos = (pixelPos / scale) * 2.0 - 1.0;
-
-    // Flip Y coordinate (since WebGL's Y axis is inverted)
+    vec2 pixelPos = (position * 2.0 * tilesize) + (vertex * tilesize);
+    vec2 ndcPos = (pixelPos / scale);
     ndcPos.y = -ndcPos.y;
-
     gl_Position = vec4(ndcPos, 0.0, 1.0);
 }
-
 `
 );
 
@@ -93,7 +81,6 @@ void main() {
     }
     gl_FragColor = vec4(1.0);
 }
-
 `
 );
 
@@ -196,11 +183,17 @@ function resize() {
     var numTilesX = canvas.width / cell;
     var numTilesY = canvas.height / cell;
 
+/*
     for (var x = 0; x < numTilesX; x++) {
         for (var y = 0; y < numTilesY; y++) {
             grid.push(new Entity(x, y, 2, 0)); 
         }
     }
+    */
+
+    grid.push(new Entity(-1, 1, 1, 0)); 
+    grid.push(new Entity(0, 0, 2, 0)); 
+
 
     requestAnimationFrame(draw);
 }
@@ -209,16 +202,16 @@ function resize() {
 document.addEventListener('keydown', (event) => {
     switch (event.key) {
         case 'w':
-            //player.y -= 1;
+            grid[0].y = grid[0].y - 1;
             break;
         case 'a':
-            //player.x -= 1;
+            grid[0].x = grid[0].x - 1;
             break;
         case 's':
-            //player.y += 1;
+            grid[0].y = grid[0].y + 1;
             break;
         case 'd':
-            //player.x += 1;
+            grid[0].x = grid[0].x + 1;
             break;
         case ' ':
             for (var i = grid.length - 1; i >= 0; i--) {
