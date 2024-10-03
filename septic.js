@@ -5,7 +5,8 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
-const cell      = 100000;
+
+const cell      = 128;
 
 shader(gl.VERTEX_SHADER,
 `
@@ -101,19 +102,7 @@ ib = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
 
-const tm    = Math.sqrt(tileset.length);
-const t     = gl.createTexture();
-const tb    = new Uint8Array((tileset.length / 8));
-
-for (let i = 0; i < tileset.length; i += 8) {
-    let packedByte = 0;
-    for (let j = 0; j < 8; j++) {
-        if (i + j < tileset.length) {
-            packedByte |= (tileset[i + j] > 0 ? 1 : 0) << (7 - j);
-        }
-    }
-    tb[i / 8] = packedByte;
-}
+const t = gl.createTexture();
 
 gl.bindTexture(gl.TEXTURE_2D, t);
 gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
@@ -171,15 +160,14 @@ function resize() {
     canvas.height = window.innerHeight * window.devicePixelRatio;
     gl.uniform2f(scale, canvas.width, canvas.height);
 
-    var tileSize = findTileSize(canvas.width, canvas.height);
-    console.log(tileSize);
-    gl.uniform1f(tilesize, tileSize);
+    console.log(cell);
+    gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     grid = [];
 
-    var numTilesX = canvas.width / tileSize;
-    var numTilesY = canvas.height / tileSize;
+    var numTilesX = canvas.width / cell;
+    var numTilesY = canvas.height / cell;
 
     for (var x = 0; x < numTilesX; x++) {
         for (var y = 0; y < numTilesY; y++) {
@@ -189,27 +177,6 @@ function resize() {
 
     requestAnimationFrame(draw);
 }
-
-function findTileSize(width, height) {
-    var startTileSize = 118; // 128 - 10
-    var endTileSize = 138;   // 128 + 10
-    var closestTileSize = 128;
-    var minDiff = Infinity;
-
-    for (var tileSize = startTileSize; tileSize <= endTileSize; tileSize++) {
-        if (width % tileSize === 0 && height % tileSize === 0) {
-            var diff = Math.abs(tileSize - 128);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestTileSize = tileSize;
-            }
-            if (diff === 0) break;
-        }
-    }
-
-    return closestTileSize;
-}
-
 
 
 document.addEventListener('keydown', (event) => {
