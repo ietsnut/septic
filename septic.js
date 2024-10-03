@@ -157,7 +157,6 @@ function draw(now) {
     for (var i = 0; i < grid.length; i++) {
         let cube = grid[i];
         gl.uniform2f(tile, cube.tx, cube.ty);
-        console.log(cube);
         gl.uniform2f(position, cube.x, cube.y);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
     }
@@ -171,19 +170,46 @@ function resize() {
     canvas.width = window.innerWidth * window.devicePixelRatio;
     canvas.height = window.innerHeight * window.devicePixelRatio;
     gl.uniform2f(scale, canvas.width, canvas.height);
-    gl.uniform1f(tilesize, 128.0);
+
+    var tileSize = findTileSize(canvas.width, canvas.height);
+    console.log(tileSize);
+    gl.uniform1f(tilesize, tileSize);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     grid = [];
 
-    for (var x = 0; x < window.innerWidth * 2 / 128; x++) {
-        for (var y = 0; y < window.innerHeight * 2 / 128; y++) {
+    var numTilesX = canvas.width / tileSize;
+    var numTilesY = canvas.height / tileSize;
+
+    for (var x = 0; x < numTilesX; x++) {
+        for (var y = 0; y < numTilesY; y++) {
             grid.push(new Entity(x, y, 2, 0)); 
         }
     }
 
     requestAnimationFrame(draw);
 }
+
+function findTileSize(width, height) {
+    var startTileSize = 118; // 128 - 10
+    var endTileSize = 138;   // 128 + 10
+    var closestTileSize = 128;
+    var minDiff = Infinity;
+
+    for (var tileSize = startTileSize; tileSize <= endTileSize; tileSize++) {
+        if (width % tileSize === 0 && height % tileSize === 0) {
+            var diff = Math.abs(tileSize - 128);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestTileSize = tileSize;
+            }
+            if (diff === 0) break;
+        }
+    }
+
+    return closestTileSize;
+}
+
 
 
 document.addEventListener('keydown', (event) => {
@@ -201,7 +227,6 @@ document.addEventListener('keydown', (event) => {
             //player.x += 1;
             break;
         case ' ':
-            console.log("chaning");
             for (var i = grid.length - 1; i >= 0; i--) {
                 grid[i].ty = grid[i].ty == 0 ? 1 : 0;
             }
