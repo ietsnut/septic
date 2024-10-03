@@ -24,11 +24,10 @@ uniform vec2 tile;
 uniform vec2 position;
 
 void main() {
-    vec2 cell = vec2(16.0, 16.0) / 256.0;
+    vec2 cell = vec2(16.0, 16.0) / ` + tm + `.0;
     uv = (tile * cell) + (tcoord * cell);
-    vec2 pixelPos = (position * 2.0 * tilesize) + (vertex * tilesize);
-    vec2 ndcPos = (pixelPos / scale);
-    ndcPos.y = -ndcPos.y;
+    vec2 ndcPos = (((position * 2.0 * tilesize) + (vertex * tilesize)) / scale);
+    ndcPos.y    = -ndcPos.y;
     gl_Position = vec4(ndcPos, 0.0, 1.0);
 }
 `
@@ -115,9 +114,6 @@ class Entity {
 
 var grid = [];
 
-//grid.push(new Entity(1, 1, 0, 0)); 
-//grid.push(new Entity(0, 0, 5, 0)); 
-
 const tile      = gl.getUniformLocation(program, "tile");
 const tilesize  = gl.getUniformLocation(program, "tilesize");
 const scale     = gl.getUniformLocation(program, "scale");
@@ -153,10 +149,10 @@ function resize() {
 
     grid = [];
 
-    var numTilesX = canvas.width / cell;
-    var numTilesY = canvas.height / cell;
+    var numTilesX = canvas.width    / cell;
+    var numTilesY = canvas.height   / cell;
 
-/*
+    /*
     for (var x = 0; x < numTilesX; x++) {
         for (var y = 0; y < numTilesY; y++) {
             grid.push(new Entity(x, y, 2, 0)); 
@@ -164,27 +160,82 @@ function resize() {
     }
     */
 
-    grid.push(new Entity(-1, 1, 1, 0)); 
+    grid.push(new Entity(-1, 1, 5, 0)); 
     grid.push(new Entity(0, 0, 2, 0)); 
-
-
+    
     requestAnimationFrame(draw);
 }
 
+let walking;
 
 document.addEventListener('keydown', (event) => {
+    if (walking) {
+        return;
+    }
     switch (event.key) {
         case 'w':
-            grid[0].y = grid[0].y - 1;
+            walking = true;
+            grid[0].ty = 1;
+            grid[0].y = grid[0].y - 0.5;
+            requestAnimationFrame(draw);
+            setTimeout(function(){
+                grid[0].ty = 2;
+                grid[0].y = grid[0].y - 0.5;
+                requestAnimationFrame(draw);
+            }, 50);
+            setTimeout(function(){
+                grid[0].ty = 0;
+                requestAnimationFrame(draw);
+                walking = false;
+            }, 100);
             break;
         case 'a':
-            grid[0].x = grid[0].x - 1;
+            walking = true;
+            grid[0].ty = 1;
+            grid[0].x = grid[0].x - 0.5;
+            requestAnimationFrame(draw);
+            setTimeout(function(){
+                grid[0].ty = 2;
+                grid[0].x = grid[0].x - 0.5;
+                requestAnimationFrame(draw);
+            }, 50);
+            setTimeout(function(){
+                grid[0].ty = 0;
+                requestAnimationFrame(draw);
+                walking = false;
+            }, 100);
             break;
         case 's':
-            grid[0].y = grid[0].y + 1;
+            walking = true;
+            grid[0].ty = 1;
+            grid[0].y = grid[0].y + 0.5;
+            requestAnimationFrame(draw);
+            setTimeout(function(){
+                grid[0].ty = 2;
+                grid[0].y = grid[0].y + 0.5;
+                requestAnimationFrame(draw);
+            }, 50);
+            setTimeout(function(){
+                grid[0].ty = 0;
+                requestAnimationFrame(draw);
+                walking = false;
+            }, 100);
             break;
         case 'd':
-            grid[0].x = grid[0].x + 1;
+            walking = true;
+            grid[0].ty = 1;
+            grid[0].x = grid[0].x + 0.5;
+            requestAnimationFrame(draw);
+            setTimeout(function(){
+                grid[0].ty = 2;
+                grid[0].x = grid[0].x + 0.5;
+                requestAnimationFrame(draw);
+            }, 50);
+            setTimeout(function(){
+                grid[0].ty = 0;
+                requestAnimationFrame(draw);
+                walking = false;
+            }, 100);
             break;
         case ' ':
             for (var i = grid.length - 1; i >= 0; i--) {

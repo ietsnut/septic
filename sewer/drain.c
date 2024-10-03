@@ -20,7 +20,7 @@ void center_box(const char *message);
 
 // Global variables
 volatile sig_atomic_t resize_flag = 1;  // Flag for terminal resize
-char last_message[256] = "pipes drained"; // Store the last message
+char last_message[256] = "PIPES DRAINED"; // Store the last message
 
 // Signal handler for terminal resize
 void handle_sigwinch(int sig) {
@@ -28,6 +28,7 @@ void handle_sigwinch(int sig) {
 }
 
 int main(void) {
+
     title("sewer");
 
     hidecursor();             // Hide cursor
@@ -37,7 +38,6 @@ int main(void) {
 
     // Initial processing
     process_files();
-
     // Set up signal handler for terminal resize
     signal(SIGWINCH, handle_sigwinch);
 
@@ -45,12 +45,13 @@ int main(void) {
     center_box(last_message);
 
     // Get initial modification times
-    time_t septic_html_mtime = get_file_mod_time("../septic.html");
-    time_t septic_png_mtime  = get_file_mod_time("../septic.png");
-    time_t septic_js_mtime   = get_file_mod_time("../septic.js");
+    time_t septic_html_mtime = get_file_mod_time("./septic.html");
+    time_t septic_png_mtime  = get_file_mod_time("./septic.png");
+    time_t septic_js_mtime   = get_file_mod_time("./septic.js");
 
     int quit = 0;
     while (!quit) {
+
         // Check for key presses
         if (kbhit()) {
             int key = getkey();
@@ -69,7 +70,7 @@ int main(void) {
                     strftime(time_str, sizeof(time_str), "%H:%M:%S", tm_info);
 
                     // Update and display the message with the timestamp
-                    snprintf(last_message, sizeof(last_message), "pipes drained @ %s", time_str);
+                    snprintf(last_message, sizeof(last_message), "PIPES DRAINED @ %s", time_str);
                     center_box(last_message);
                     fflush(stdout);
                     break;
@@ -85,9 +86,9 @@ int main(void) {
             last_check = current_time;
 
             // Get current modification times
-            time_t new_septic_html_mtime = get_file_mod_time("../septic.html");
-            time_t new_septic_png_mtime  = get_file_mod_time("../septic.png");
-            time_t new_septic_js_mtime   = get_file_mod_time("../septic.js");
+            time_t new_septic_html_mtime = get_file_mod_time("./septic.html");
+            time_t new_septic_png_mtime  = get_file_mod_time("./septic.png");
+            time_t new_septic_js_mtime   = get_file_mod_time("./septic.js");
 
             // Check if any file has changed
             if (new_septic_html_mtime != septic_html_mtime ||
@@ -133,7 +134,7 @@ int main(void) {
                 tm_info = localtime(&latest_mod_time);
                 strftime(mod_time_str, sizeof(mod_time_str), "%H:%M:%S", tm_info);
 
-                snprintf(status_message, sizeof(status_message), "pipes drained %s @ %s", changed_files, mod_time_str);
+                snprintf(status_message, sizeof(status_message), "PIPES DRAINED %s @ %s", changed_files, mod_time_str);
 
                 // Update modification times
                 septic_html_mtime = new_septic_html_mtime;
@@ -155,7 +156,7 @@ int main(void) {
         }
 
         // Sleep for a short time to reduce CPU usage
-        usleep(10000); // 10 milliseconds
+        usleep(1000); // 10 milliseconds
     }
 
     cls();           // Clear the screen when exiting
@@ -209,7 +210,7 @@ void center_box(const char *message) {
 void process_files() {
     // Step 1: Read and process septic.png using stb_image
     int width, height, channels;
-    unsigned char *img = stbi_load("../septic.png", &width, &height, &channels, 1); // Load as grayscale
+    unsigned char *img = stbi_load("./septic.png", &width, &height, &channels, 1); // Load as grayscale
 
     if (!img) {
         fprintf(stderr, "Failed to load septic.png\n");
@@ -262,10 +263,10 @@ void process_files() {
     free(tb);
 
     // Step 3: Read and modify septic.html
-    char *septic_html = read_file("../septic.html");
+    char *septic_html = read_file("./septic.html");
 
     // Step 4: Read septic.js
-    char *septic_js = read_file("../septic.js");
+    char *septic_js = read_file("./septic.js");
 
     // Remove septic.js script tag from septic_html
     char *septic_script_tag = "<script type=\"text/javascript\" src=\"septic.js\"></script>";
@@ -295,7 +296,7 @@ void process_files() {
     strcat(new_index_html, septic_pos + septic_len);
 
     // Write to index.html
-    FILE *output = fopen("../index.html", "w");
+    FILE *output = fopen("./index.html", "w");
     if (!output) {
         fprintf(stderr, "Could not open index.html for writing\n");
         free(preprocessed_js);

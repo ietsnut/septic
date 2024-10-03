@@ -518,7 +518,7 @@ void drawBox(int x, int y, int width, int height) {
     locate(x, y);
 
     // Draw top border
-    printRandom("╭", 3); // Top-left corner
+    printRandom("┌", 3); // Top-left corner
     for (int i = 0; i < width - 2; i++) {
         int r = rand() % 10; // 0-9
         if (r < 2) { // 20% chance to use alternative
@@ -530,7 +530,7 @@ void drawBox(int x, int y, int width, int height) {
             printf("─"); // Standard horizontal line
         }
     }
-    printRandom("╮", 3); // Top-right corner
+    printRandom("┐", 3); // Top-right corner
     printf("\n");
 
     // Draw side borders
@@ -565,7 +565,7 @@ void drawBox(int x, int y, int width, int height) {
 
     // Draw bottom border
     locate(x, y + height - 1);
-    printRandom("╰", 3);
+    printRandom("└", 3);
     //printf("╰"); // Bottom-left corner
 
     for (int i = 0; i < width - 2; i++) {
@@ -579,7 +579,7 @@ void drawBox(int x, int y, int width, int height) {
             printf("─"); // Standard horizontal line
         }
     }
-    printRandom("╯", 3); // Bottom-right corner
+    printRandom("┘", 3); // Bottom-right corner
     printf("\n");
 }
 
