@@ -8,7 +8,6 @@
 #define RUTIL_H
 
 #include <stdio.h> /* for getch() / printf() */
-#include <stdlib.h> /* for rand() */
 #include <string.h> /* for strlen() */
 #include <stdarg.h> /* for colorPrint() */
 
@@ -472,30 +471,8 @@ void printXY(int x, int y, const char* msg) {
         printf("%s", msg);
 }
 
-/*
-
-instead of printing a box like this:
-
- ╭───────────────────╮
- │                   │
- │   pipes drained   │
- │                   │
- ╰───────────────────╯
-
-make it print like this:
-
- ╭──────╶╶╶──────────╮
- │                   ╎
- │   pipes drained   ╎
- ╎					 │
- ╰──────────────╴╴───╯	
-
-*/
-const char* h_alt[] = {"╶", "╴"};
-const char* v_alt[] = {"╎"};
-
 /**
- * @brief Draws a box with optional random alternative characters and gaps.
+ * @brief Draws a box
  * @param x Starting column (1-based)
  * @param y Starting row (1-based)
  * @param width Width of the box (minimum 2)
@@ -507,45 +484,22 @@ void drawBox(int x, int y, int width, int height) {
         return;
     }
 
-    // Seed the random number generator if not already seeded
-    static int seeded = 0;
-    if (!seeded) {
-        srand((unsigned int)time(NULL));
-        seeded = 1;
-    }
-
     // Set cursor to top-left corner of the box
     locate(x, y);
 
     // Draw top border
-    printRandom("┌", 3); // Top-left corner
+    printf("┌"); // Top-left corner
     for (int i = 0; i < width - 2; i++) {
-        int r = rand() % 10; // 0-9
-        if (r < 2) { // 20% chance to use alternative
-            int alt = rand() % 2;
-            printf("%s", h_alt[alt]);
-        } else if (r < 4 ) { // 20% chance to omit
-            printf(" "); // Gap
-        } else {
-            printf("─"); // Standard horizontal line
-        }
+		printf("─");
     }
-    printRandom("┐", 3); // Top-right corner
-    printf("\n");
+    printf("┐\n");
 
     // Draw side borders
     for (int i = 0; i < height - 2; i++) {
         locate(x, y + 1 + i); // Move cursor to the next row
 
         // Left vertical line
-        int r_left = rand() % 10; // 0-9
-        if (r_left < 2) { // 20% chance to use alternative
-            printf("%s", v_alt[0]);
-        } else if (r_left < 4) { // 10% chance to omit
-            printf(" "); // Gap
-        } else {
-            printf("│"); // Standard vertical line
-        }
+		printf("│");
 
         // Fill the inside of the box
         for (int j = 0; j < width - 2; j++) {
@@ -553,42 +507,14 @@ void drawBox(int x, int y, int width, int height) {
         }
 
         // Right vertical line
-        int r_right = rand() % 10; // 0-9
-        if (r_right < 2) { // 20% chance to use alternative
-            printf("%s\n", v_alt[0]);
-        } else if (r_right < 3) { // 10% chance to omit
-            printf(" \n"); // Gap
-        } else {
-            printf("│\n"); // Standard vertical line
-        }
+		printf("│\n");
     }
-
-    // Draw bottom border
     locate(x, y + height - 1);
-    printRandom("└", 3);
-    //printf("╰"); // Bottom-left corner
-
+    printf("└");
     for (int i = 0; i < width - 2; i++) {
-        int r = rand() % 10; // 0-9
-        if (r < 2) { // 20% chance to use alternative
-            int alt = rand() % 2;
-            printf("%s", h_alt[alt]);
-        } else if (r < 3) { // 10% chance to omit
-            printf(" "); // Gap
-        } else {
-            printf("─"); // Standard horizontal line
-        }
+		printf("─");
     }
-    printRandom("┘", 3); // Bottom-right corner
-    printf("\n");
-}
-
-void printRandom(const char* c, int s) {
-    if (rand() % 10 < s) {
-    	printf(c);
-    } else {
-    	printf(" ");
-    }
+    printf("┘\n");
 }
 
 #endif /* RUTIL_H */

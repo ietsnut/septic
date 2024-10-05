@@ -169,6 +169,7 @@ int main(void) {
 
 void center_box(const char *message) {
     cls();
+    fflush(stdout);
     int term_width = tcols();
     int term_height = trows();
 
