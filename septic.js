@@ -5,7 +5,7 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
-const cell      = 96;
+const cell      = 48 * window.devicePixelRatio;
 
 shader(gl.VERTEX_SHADER,
 `
