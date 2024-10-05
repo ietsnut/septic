@@ -156,7 +156,7 @@ int main(void) {
         }
 
         // Sleep for a short time to reduce CPU usage
-        usleep(1000); // 10 milliseconds
+        usleep(100);
     }
 
     cls();           // Clear the screen when exiting

@@ -149,6 +149,9 @@ const position  = gl.getUniformLocation(program, "position");
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
 
+grid.push(new Entity(-1, 1, 5, 0)); 
+grid.push(new Entity(0, 0, 2, 0)); 
+
 function draw(now) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -156,40 +159,58 @@ function draw(now) {
     for (var i = 0; i < grid.length; i++) {
         let cube = grid[i];
         gl.uniform2f(tile, cube.tx, cube.ty);
-        gl.uniform2f(position, cube.x, cube.y);
+        gl.uniform2f(position, cube.x, -cube.y);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
     }
 }
 
 window.addEventListener("resize",           resize);
 window.addEventListener("fullscreenchange", resize);
+
+document.addEventListener("click", function() {
+    openCustomPopup("Hello, this is a custom UI dialogue!", 200, 100, 300, 200);
+});
+function openCustomPopup(message, width, height, x, y) {
+    // Define popup parameters
+    const params = `width=${width},height=${height},left=${x},top=${y},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    const popupWindow = window.open(null, "customPopup", params);
+    if (!popupWindow) {
+        alert("Failed to open popup. Please check if popups are blocked in your browser.");
+        return;
+    }
+    popupWindow.document.write(`
+        <html>
+        <head>
+            <title>Custom Popup</title>
+            <style>
+                body {
+                    background-color: black;
+                    color: white;
+                    font-family: monospace;
+                    font-size: 24px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+            </style>
+        </head>
+        <body>
+            <div>${message}</div>
+        </body>
+        </html>
+    `);
+    popupWindow.document.close();
+}
 //document.addEventListener("contextmenu", e => e.preventDefault());
 
 function resize() {
     canvas.width = window.innerWidth * window.devicePixelRatio;
     canvas.height = window.innerHeight * window.devicePixelRatio;
     gl.uniform2f(scale, canvas.width, canvas.height);
-
-    console.log(cell);
     gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
-
-    grid = [];
-
-    var numTilesX = canvas.width    / cell;
-    var numTilesY = canvas.height   / cell;
-
-    /*
-    for (var x = 0; x < numTilesX; x++) {
-        for (var y = 0; y < numTilesY; y++) {
-            grid.push(new Entity(x, y, 2, 0)); 
-        }
-    }
-    */
-
-    grid.push(new Entity(-1, 1, 5, 0)); 
-    grid.push(new Entity(0, 0, 2, 0)); 
-    
     requestAnimationFrame(draw);
 }
 
@@ -203,11 +224,11 @@ document.addEventListener('keydown', (event) => {
         case 'w':
             walking = true;
             grid[0].ty = 1;
-            grid[0].y = grid[0].y - 0.5;
+            grid[0].y = grid[0].y + 0.5;
             requestAnimationFrame(draw);
             setTimeout(function(){
                 grid[0].ty = 2;
-                grid[0].y = grid[0].y - 0.5;
+                grid[0].y = grid[0].y + 0.5;
                 requestAnimationFrame(draw);
             }, 50);
             setTimeout(function(){
@@ -235,11 +256,11 @@ document.addEventListener('keydown', (event) => {
         case 's':
             walking = true;
             grid[0].ty = 1;
-            grid[0].y = grid[0].y + 0.5;
+            grid[0].y = grid[0].y - 0.5;
             requestAnimationFrame(draw);
             setTimeout(function(){
                 grid[0].ty = 2;
-                grid[0].y = grid[0].y + 0.5;
+                grid[0].y = grid[0].y - 0.5;
                 requestAnimationFrame(draw);
             }, 50);
             setTimeout(function(){
