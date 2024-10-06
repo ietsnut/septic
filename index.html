@@ -16,10 +16,30 @@
 			    -ms-user-select: none;
 			    user-select: none;
 			}
+            .border {
+            	box-sizing: border-box;
+            	position: fixed;
+            	width: 100%;
+            	height: 100%;
+            	padding: 64px;
+            	top: 0;
+            	left: 0;
+                image-rendering: pixelated;
+                border: 48px solid transparent;
+                display: none;
+            }
+            #border1 {
+                border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAABl0lEQVRoge1aQRLDIAhc/P+f6UWsIlqTmhQ62UtaJLgGQUckAIwM5vITRAQtX5Vp+UrbWdvJeomIyv/8JABkyHQHpHVX2z71J7xqbqLI+gsYHTdiJRNrvYHjbdo2APCIGxGBmJm1qwzXWQTuwJCbeCE12lmhdpE2qJ47MbWtuclAmgGIguUyUYHt5h2Y2h5xOxMDd2MaAwmAOW2ckAdU1gLaWCgewNuF5cWbCK5Cc+OSheCP7Co4fdbxjZTnUu2eK1LkLjQ8myBGuzJ6HEQ91blZB1TG8RoT9YctmSl+EBsxEAVt7ne0cK2Azb1QRFhBHAF/FMS/ZvAt4g8gchodbSUi4Emjv8aTRt0g/gACZiDBk0ZdQLIQEC8TvacQ4pEH8lrwHKvciOdYxSPibyXiH6+jOhdyVNzTGBb7khYIHG0vuhJTXVFKoyq5KKIfxJWD6vqacWPmU2XWq9aJqe0Rt3odWC2z1s+dmNreWWZ1ddVgWma19klKxnIBA4P5e6BN2y4yfTmkK7PWjYKV6y9Hr9QcsT2SafkL1VeAPQkpAp0AAAAASUVORK5CYII=") 16 round;
+            }
+            #border2 {
+                border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAABtklEQVRoge1a7Q6DMAiExfd/5e6PGoYcoPZrSS8x2dT2jtLRFsalFPpnbEREzHyxopTC1n35/PjMzOi1EMcARlxI46Y70oIsDzHzSSgNeQIpDHF5Gj9JkvPyyJ5CC9NcHlIGaJLWuMN1TqGMxT2M8DgsjdveKFT/5oeahceBNMIopBq/EpZBMPLmQxiFPLTwhBcckK6jzWbdjBq/DZ2oLzTSnq5NvywWFreTVjh4kCe0josBzNxl5L3+s54gUgZEK2FPWJ6w9KXWgdYjj/ikJ5C+cx1g5jLrzlTr2qc5EwVRaAZEmrjGqI8yvJSS38zNimXAaCwDRmMZMBrLgNFYBozGMmA0lgGjIY+UqVR6bTxJaO3trieymQ71ByJNP6nFbGKrN6xB3M/wOLUoG9UqZmQBqjH6HSICh3orF9N7KnlTJ5VatNDaE5kseSq1iBp7z2shykZrhFEIdCYLc9WKfAierjC16OXra3njbllJwi0xofAakT6Bx+F52S10W50hshrwOJDGj/hyXggTFPouGtObuZ7rwB2uSxi10HqP9OYfAGEUcqJTFQtkMSNMpVt7olk2bE/xBcyVKKMkKSd8AAAAAElFTkSuQmCC") 16 round;
+            }
 		</style>
 	</head>
 	<body>
 		<canvas></canvas>
+		<div class="border" id="border1"></div>
+		<div class="border" id="border2"></div>
 	</body>
 	<script type="text/javascript">
 const tm = 256;
@@ -35,6 +55,9 @@ function get(parameterName) {
     }
     return result;
 }
+
+var isPopup = get('popup') === 'true';
+var main = !isPopup;
 
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
@@ -57,11 +80,14 @@ uniform float tilesize;
 uniform vec2 tile;
 uniform vec2 position;
 
+uniform vec2 offset;
+
 void main() {
     vec2 cell = vec2(16.0, 16.0) / ${tm}.0;
     uv = (tile * cell) + (tcoord * cell);
     vec2 ndcPos = (((position * 2.0 * tilesize) + (vertex * tilesize)) / scale);
     ndcPos.y    = -ndcPos.y;
+    ndcPos += offset; // Apply the offset here
     gl_Position = vec4(ndcPos, 0.0, 1.0);
 }
 `
@@ -152,16 +178,27 @@ const tile      = gl.getUniformLocation(program, "tile");
 const tilesize  = gl.getUniformLocation(program, "tilesize");
 const scale     = gl.getUniformLocation(program, "scale");
 const position  = gl.getUniformLocation(program, "position");
+const offset    = gl.getUniformLocation(program, "offset");
 
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
 
-grid.push(new Entity(-1, 1, 5, 0));
-grid.push(new Entity(0, 0, 2, 0));
+gl.uniform2f(offset, 0.0, 0.0);
+
+if (main) {
+    grid.push(new Entity(-1, 1, 5, 0));
+    grid.push(new Entity(0, 0, 2, 0));
+}
+
+var channel = new BroadcastChannel('engine_channel');
 
 function draw(now) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+    if (isPopup) {
+        gl.uniform2f(offset, popupScreenOffsetX, popupScreenOffsetY);
+    }
 
     for (var i = 0; i < grid.length; i++) {
         let cube = grid[i];
@@ -169,18 +206,50 @@ function draw(now) {
         gl.uniform2f(position, cube.x, -cube.y);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
     }
+
+    if (main) {
+        channel.postMessage({
+            type: 'draw',
+            entities: grid,
+            mainScreenX: window.screenX,
+            mainScreenY: window.screenY,
+            mainInnerWidth: window.innerWidth,
+            mainInnerHeight: window.innerHeight,
+            mainDPR: window.devicePixelRatio
+        });
+    }
+}
+
+var p = true;
+
+if (main) {
+    document.addEventListener("click", function() {
+        if (p) {
+            popup(400, 400, 300, 200);
+        } else {
+            dialogue("Look at what i found!", 400, 400, 300, 200);
+        }
+        p = !p;
+    });
 }
 
 window.addEventListener("resize",           resize);
 window.addEventListener("fullscreenchange", resize);
 
-document.addEventListener("click", function() {
-    openCustomPopup("The stinky sewer has forsaken us. <br><br>> There is no light in this damned place. <br><br>>I could really use a burger rn.", 800, 400, 300, 200);
-});
-function openCustomPopup(message, width, height, x, y) {
-    // Define popup parameters
+var popupWindow;
+
+function popup(width, height, x, y) {
     const params = `width=${width},height=${height},left=${x},top=${y},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
-    const popupWindow = window.open(null, "Item", params);
+    popupWindow = window.open(window.location.href.split('?')[0] + '?popup=true', "Looking glass", params);
+    if (!popupWindow) {
+        alert("Failed to open popup. Please check if popups are blocked in your browser.");
+        return;
+    }
+}
+
+function dialogue(message, width, height, x, y) {
+    const params = `width=${width},height=${height},left=${x},top=${y},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    const popupWindow = window.open(null, "Dialogue", params);
     if (!popupWindow) {
         alert("Failed to open popup. Please check if popups are blocked in your browser.");
         return;
@@ -224,9 +293,7 @@ function openCustomPopup(message, width, height, x, y) {
         </body>
         </html>
     `);
-    popupWindow.document.close();
 }
-//document.addEventListener("contextmenu", e => e.preventDefault());
 
 function resize() {
     canvas.width = window.innerWidth * window.devicePixelRatio;
@@ -235,93 +302,252 @@ function resize() {
     gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
     requestAnimationFrame(draw);
+
+    if (main) {
+        channel.postMessage({
+            type: 'resize',
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
+            mainScreenX: window.screenX,
+            mainScreenY: window.screenY,
+            mainInnerWidth: window.innerWidth,
+            mainInnerHeight: window.innerHeight,
+            mainDPR: window.devicePixelRatio
+        });
+    }
 }
 
 let walking;
 
-document.addEventListener('keydown', (event) => {
-    if (walking) {
-        return;
-    }
-    switch (event.key) {
-        case 'w':
-            walking = true;
-            grid[0].ty = 1;
-            grid[0].y = grid[0].y + 0.5;
-            requestAnimationFrame(draw);
-            setTimeout(function(){
-                grid[0].ty = 2;
+if (main) {
+    document.addEventListener('keydown', (event) => {
+        if (walking) {
+            return;
+        }
+        switch (event.key) {
+            case 'w':
+                walking = true;
+                grid[0].ty = 1;
                 grid[0].y = grid[0].y + 0.5;
                 requestAnimationFrame(draw);
-            }, 50);
-            setTimeout(function(){
-                grid[0].ty = 0;
-                requestAnimationFrame(draw);
-                walking = false;
-            }, 100);
-            break;
-        case 'a':
-            walking = true;
-            grid[0].ty = 1;
-            grid[0].x = grid[0].x - 0.5;
-            requestAnimationFrame(draw);
-            setTimeout(function(){
-                grid[0].ty = 2;
+                setTimeout(function(){
+                    grid[0].ty = 2;
+                    grid[0].y = grid[0].y + 0.5;
+                    requestAnimationFrame(draw);
+                }, 50);
+                setTimeout(function(){
+                    grid[0].ty = 0;
+                    requestAnimationFrame(draw);
+                    walking = false;
+                }, 100);
+                break;
+            case 'a':
+                walking = true;
+                grid[0].ty = 1;
                 grid[0].x = grid[0].x - 0.5;
                 requestAnimationFrame(draw);
-            }, 50);
-            setTimeout(function(){
-                grid[0].ty = 0;
-                requestAnimationFrame(draw);
-                walking = false;
-            }, 100);
-            break;
-        case 's':
-            walking = true;
-            grid[0].ty = 1;
-            grid[0].y = grid[0].y - 0.5;
-            requestAnimationFrame(draw);
-            setTimeout(function(){
-                grid[0].ty = 2;
+                setTimeout(function(){
+                    grid[0].ty = 2;
+                    grid[0].x = grid[0].x - 0.5;
+                    requestAnimationFrame(draw);
+                }, 50);
+                setTimeout(function(){
+                    grid[0].ty = 0;
+                    requestAnimationFrame(draw);
+                    walking = false;
+                }, 100);
+                break;
+            case 's':
+                walking = true;
+                grid[0].ty = 1;
                 grid[0].y = grid[0].y - 0.5;
                 requestAnimationFrame(draw);
-            }, 50);
-            setTimeout(function(){
-                grid[0].ty = 0;
-                requestAnimationFrame(draw);
-                walking = false;
-            }, 100);
-            break;
-        case 'd':
-            walking = true;
-            grid[0].ty = 1;
-            grid[0].x = grid[0].x + 0.5;
-            requestAnimationFrame(draw);
-            setTimeout(function(){
-                grid[0].ty = 2;
+                setTimeout(function(){
+                    grid[0].ty = 2;
+                    grid[0].y = grid[0].y - 0.5;
+                    requestAnimationFrame(draw);
+                }, 50);
+                setTimeout(function(){
+                    grid[0].ty = 0;
+                    requestAnimationFrame(draw);
+                    walking = false;
+                }, 100);
+                break;
+            case 'd':
+                walking = true;
+                grid[0].ty = 1;
                 grid[0].x = grid[0].x + 0.5;
                 requestAnimationFrame(draw);
-            }, 50);
-            setTimeout(function(){
-                grid[0].ty = 0;
-                requestAnimationFrame(draw);
-                walking = false;
-            }, 100);
-            break;
-        case ' ':
-            for (var i = grid.length - 1; i >= 0; i--) {
-                grid[i].ty = grid[i].ty == 0 ? 1 : 0;
-            }
-            break;
-    }
-    requestAnimationFrame(draw);
-});
-
-function random(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
+                setTimeout(function(){
+                    grid[0].ty = 2;
+                    grid[0].x = grid[0].x + 0.5;
+                    requestAnimationFrame(draw);
+                }, 50);
+                setTimeout(function(){
+                    grid[0].ty = 0;
+                    requestAnimationFrame(draw);
+                    walking = false;
+                }, 100);
+                break;
+            case ' ':
+                for (var i = grid.length - 1; i >= 0; i--) {
+                    grid[i].ty = grid[i].ty == 0 ? 1 : 0;
+                }
+                break;
+        }
+        requestAnimationFrame(draw);
+    });
 }
 
+if (main) {
+    var lastMainScreenX = window.screenX;
+    var lastMainScreenY = window.screenY;
+
+    function checkMainWindowPosition() {
+        if (window.screenX !== lastMainScreenX || window.screenY !== lastMainScreenY) {
+            channel.postMessage({
+                type: 'move',
+                mainScreenX: window.screenX,
+                mainScreenY: window.screenY,
+                mainInnerWidth: window.innerWidth,
+                mainInnerHeight: window.innerHeight,
+                mainDPR: window.devicePixelRatio
+            });
+            lastMainScreenX = window.screenX;
+            lastMainScreenY = window.screenY;
+        }
+        requestAnimationFrame(checkMainWindowPosition);
+    }
+
+    requestAnimationFrame(checkMainWindowPosition);
+}
+
+var popupScreenOffsetX = 0.0;
+var popupScreenOffsetY = 0.0;
+
+if (isPopup) {
+
+    document.title = "Looking Glass";
+    document.getElementById("border1").style.display = "block";
+
+    var mainScreenX = 0;
+    var mainScreenY = 0;
+    var mainInnerWidth = 0;
+    var mainInnerHeight = 0;
+    var mainDPR = 1.0;
+
+    var popupScreenX = window.screenX;
+    var popupScreenY = window.screenY;
+    var popupInnerWidth = window.innerWidth;
+    var popupInnerHeight = window.innerHeight;
+    var popupDPR = window.devicePixelRatio;
+
+    var lastPopupScreenX = window.screenX;
+    var lastPopupScreenY = window.screenY;
+
+    channel.onmessage = function(event) {
+        var data = event.data;
+        if (data.type === 'draw') {
+            var entities = data.entities;
+            grid = entities.map(function(e) {
+                return new Entity(e.x, e.y, e.tx, e.ty);
+            });
+            mainScreenX = data.mainScreenX;
+            mainScreenY = data.mainScreenY;
+            mainInnerWidth = data.mainInnerWidth;
+            mainInnerHeight = data.mainInnerHeight;
+            mainDPR = data.mainDPR;
+            recalculateOffset();
+            requestAnimationFrame(draw);
+        } else if (data.type === "resize") {
+            mainScreenX = data.mainScreenX;
+            mainScreenY = data.mainScreenY;
+            mainInnerWidth = data.mainInnerWidth;
+            mainInnerHeight = data.mainInnerHeight;
+            mainDPR = data.mainDPR;
+            recalculateOffset();
+            requestAnimationFrame(draw);
+        } else if (data.type === "move") {
+            mainScreenX = data.mainScreenX;
+            mainScreenY = data.mainScreenY;
+            mainInnerWidth = data.mainInnerWidth;
+            mainInnerHeight = data.mainInnerHeight;
+            mainDPR = data.mainDPR;
+            recalculateOffset();
+            requestAnimationFrame(draw);
+        }
+    };
+
+    window.addEventListener("resize", function(event) {
+        canvas.width = window.innerWidth * window.devicePixelRatio;
+        canvas.height = window.innerHeight * window.devicePixelRatio;
+        gl.uniform2f(scale, canvas.width, canvas.height);
+        gl.uniform1f(tilesize, cell);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        recalculateOffset();
+        requestAnimationFrame(draw);
+    });
+
+    function recalculateOffset() {
+        popupScreenX = window.screenX;
+        popupScreenY = window.screenY;
+        popupInnerWidth = window.innerWidth;
+        popupInnerHeight = window.innerHeight;
+        popupDPR = window.devicePixelRatio;
+
+        // Calculate centers in device pixels
+        var mainCenterX_devicePixels = (mainScreenX * mainDPR) + ((mainInnerWidth * mainDPR) / 2);
+        var mainCenterY_devicePixels = (mainScreenY * mainDPR) + ((mainInnerHeight * mainDPR) / 2);
+
+        var popupCenterX_devicePixels = (popupScreenX * popupDPR) + ((popupInnerWidth * popupDPR) / 2);
+        var popupCenterY_devicePixels = (popupScreenY * popupDPR) + ((popupInnerHeight * popupDPR) / 2);
+
+        // Offset between centers
+        var offsetX_devicePixels = mainCenterX_devicePixels - popupCenterX_devicePixels;
+        var offsetY_devicePixels = mainCenterY_devicePixels - popupCenterY_devicePixels;
+
+        // Convert to NDC
+        var offsetX_NDC = (offsetX_devicePixels * 2) / canvas.width;
+        var offsetY_NDC = -(offsetY_devicePixels * 2) / canvas.height;
+
+        popupScreenOffsetX = offsetX_NDC;
+        popupScreenOffsetY = offsetY_NDC;
+    }
+
+    function update() {
+        if (window.screenX !== lastPopupScreenX || window.screenY !== lastPopupScreenY) {
+            recalculateOffset();
+            requestAnimationFrame(draw);
+            lastPopupScreenX = window.screenX;
+            lastPopupScreenY = window.screenY;
+        }
+        requestAnimationFrame(update);
+    }
+
+    requestAnimationFrame(update);
+} else {
+    document.getElementById("border2").style.display = "block";
+    channel.onmessage = function(event) {
+        channel.postMessage({
+            type: 'draw',
+            entities: grid,
+            mainScreenX: window.screenX,
+            mainScreenY: window.screenY,
+            mainInnerWidth: window.innerWidth,
+            mainInnerHeight: window.innerHeight,
+            mainDPR: window.devicePixelRatio
+        });
+    };
+}
+channel.postMessage({
+    type: 'draw'
+});
+
 resize();
-requestAnimationFrame(draw);
+
+if (!isPopup) {
+    requestAnimationFrame(draw);
+}
+
 </script>
 </html>
