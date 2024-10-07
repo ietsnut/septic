@@ -255,7 +255,7 @@ for (let pos of positions) {
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
 
-function draw(now) {
+function draw() {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     for (var i = 0; i < grid.length; i++) {
@@ -353,8 +353,10 @@ function move() {
     if (moveX !== 0 || moveY !== 0) {
 
         if (moveY == 0) {
-            right = moveX > 0;
+            right = moveX > 0 || keys["d"];
         }
+
+        requestAnimationFrame(draw);
 
         let player = grid[0];
         let newX = player.x + moveX;
@@ -377,9 +379,10 @@ function move() {
 
         if (moving) return;
         player.ty = player.ty === 1 ? 2 : 1;
+
         requestAnimationFrame(draw);
         moving = true;
-        setTimeout(function() {
+        setTimeout(function() { 
             player.ty = player.ty === 1 ? 2 : 1;
             requestAnimationFrame(draw);
         }, 100);
