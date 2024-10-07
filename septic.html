@@ -16,7 +16,7 @@
 			    -ms-user-select: none;
 			    user-select: none;
 			}
-            .border {
+            #border {
             	box-sizing: border-box;
             	position: fixed;
             	width: 100%;
@@ -26,20 +26,14 @@
             	left: 0;
                 image-rendering: pixelated;
                 border: 48px solid transparent;
-                display: none;
-            }
-            #border1 {
-                border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAABl0lEQVRoge1aQRLDIAhc/P+f6UWsIlqTmhQ62UtaJLgGQUckAIwM5vITRAQtX5Vp+UrbWdvJeomIyv/8JABkyHQHpHVX2z71J7xqbqLI+gsYHTdiJRNrvYHjbdo2APCIGxGBmJm1qwzXWQTuwJCbeCE12lmhdpE2qJ47MbWtuclAmgGIguUyUYHt5h2Y2h5xOxMDd2MaAwmAOW2ckAdU1gLaWCgewNuF5cWbCK5Cc+OSheCP7Co4fdbxjZTnUu2eK1LkLjQ8myBGuzJ6HEQ91blZB1TG8RoT9YctmSl+EBsxEAVt7ne0cK2Azb1QRFhBHAF/FMS/ZvAt4g8gchodbSUi4Emjv8aTRt0g/gACZiDBk0ZdQLIQEC8TvacQ4pEH8lrwHKvciOdYxSPibyXiH6+jOhdyVNzTGBb7khYIHG0vuhJTXVFKoyq5KKIfxJWD6vqacWPmU2XWq9aJqe0Rt3odWC2z1s+dmNreWWZ1ddVgWma19klKxnIBA4P5e6BN2y4yfTmkK7PWjYKV6y9Hr9QcsT2SafkL1VeAPQkpAp0AAAAASUVORK5CYII=") 16 round;
-            }
-            #border2 {
                 border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAABtklEQVRoge1a7Q6DMAiExfd/5e6PGoYcoPZrSS8x2dT2jtLRFsalFPpnbEREzHyxopTC1n35/PjMzOi1EMcARlxI46Y70oIsDzHzSSgNeQIpDHF5Gj9JkvPyyJ5CC9NcHlIGaJLWuMN1TqGMxT2M8DgsjdveKFT/5oeahceBNMIopBq/EpZBMPLmQxiFPLTwhBcckK6jzWbdjBq/DZ2oLzTSnq5NvywWFreTVjh4kCe0josBzNxl5L3+s54gUgZEK2FPWJ6w9KXWgdYjj/ikJ5C+cx1g5jLrzlTr2qc5EwVRaAZEmrjGqI8yvJSS38zNimXAaCwDRmMZMBrLgNFYBozGMmA0lgGjIY+UqVR6bTxJaO3trieymQ71ByJNP6nFbGKrN6xB3M/wOLUoG9UqZmQBqjH6HSICh3orF9N7KnlTJ5VatNDaE5kseSq1iBp7z2shykZrhFEIdCYLc9WKfAierjC16OXra3njbllJwi0xofAakT6Bx+F52S10W50hshrwOJDGj/hyXggTFPouGtObuZ7rwB2uSxi10HqP9OYfAGEUcqJTFQtkMSNMpVt7olk2bE/xBcyVKKMkKSd8AAAAAElFTkSuQmCC") 16 round;
+                display: block;
             }
 		</style>
 	</head>
 	<body>
 		<canvas></canvas>
-		<div class="border" id="border1"></div>
-		<div class="border" id="border2"></div>
+		<div id="border"></div>
 	</body>
 	<script type="text/javascript" src="septic.js"></script>
 </html>
