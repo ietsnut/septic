@@ -200,15 +200,16 @@ let positions = generateSpiralPositions(radius);
 for (let pos of positions) {
     const r = random();
     if (r > 220) {
-        grid.push(new Entity(pos.x, pos.y, 2, 3));
-        grid.push(new Entity(pos.x, pos.y + 1, 2, 3));
+        grid.push(new Entity(pos.x, pos.y, 3, 6));
+        grid.push(new Entity(pos.x, pos.y + 1, 3, 6));
         if (r > 245) {
-            grid.push(new Entity(pos.x, pos.y + 2, 2, 3));
+            grid.push(new Entity(pos.x, pos.y + 2, 0, 6));
         }
     }
-    if (r < 20) {
+    if (r < 10) {
         grid.push(new Entity(pos.x, pos.y, 3, 3));
     }
+
 }
 
 gl.enableVertexAttribArray(0);
@@ -226,7 +227,12 @@ function draw() {
     }
 }
 
+let popup;
+
 document.addEventListener("click", function() {
+    if (popup) {
+        popup.close();
+    }
     dialogue("Look at what i found!", 400, 400, 300, 200);
 });
 
@@ -235,12 +241,12 @@ window.addEventListener("fullscreenchange", resize);
 
 function dialogue(message, width, height, x, y) {
     const params = `width=${width},height=${height},left=${x},top=${y},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
-    const popupWindow = window.open(null, "Dialogue", params);
-    if (!popupWindow) {
+    popup = window.open(null, "Dialogue", params);
+    if (!popup) {
         alert("Failed to open popup. Please check if popups are blocked in your browser.");
         return;
     }
-    popupWindow.document.write(`
+    popup.document.write(`
         <html>
         <head>
             <title>Item</title>

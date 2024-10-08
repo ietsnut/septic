@@ -12,7 +12,6 @@
 #include <stdarg.h> /* for colorPrint() */
 
 void locate(int x, int y);
-void printRandom(const char* c, int s);
 
 #include <termios.h> /* for getch() and kbhit() */
 #include <unistd.h> /* for getch(), kbhit() and getuid() */
