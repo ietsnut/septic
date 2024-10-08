@@ -1,0 +1,22 @@
+body, html, canvas {
+    background: #000000;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+border {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    image-rendering: pixelated;
+    border: 48px solid transparent;
+    border-image: url('data:image/png;base64,FRAME(6,4)') 16 round;
+}
