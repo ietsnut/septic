@@ -197,43 +197,7 @@ function dialogue(message, width, height, x, y) {
         return;
     }
     popup.document.write(`
-        <html>
-        <head> 
-            <title>Item</title>
-            <style>
-                 @font-face {
-                  font-family: 'Pixel'; 
-                  src: url('data:application/octet-stream;base64,INCLUDE(septic.ttf,BASE64)') format('truetype');
-                }
-                * {
-                    box-sizing: border-box;
-                    font-family: 'Pixel';
-                    user-select: none;
-                }
-                html, body {
-                    background-color: black;
-                    color: white;
-                    font-size: 24px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100%;
-                    width: 100%;
-                    margin: 0;
-                }
-                div {
-                    width: 100%;
-                    height: 100%;
-                    image-rendering: pixelated;
-                    border: 48px solid transparent;
-                    border-image: url('INCLUDE(septic.png,FRAME,4,4)') 16 round;    
-                }
-            </style>
-        </head>
-        <body>
-            <div>${message}</div>
-        </body>
-        </html>
+        INCLUDE(dialogue.html)
     `);
 }
 
