@@ -303,38 +303,59 @@ char* process_frame(int tile_x, int tile_y) {
     DEBUG_PRINT("Image loaded: width=%d, height=%d, channels=%d\n", width, height, channels);
 
     int tile_size = 16, frame_size = 48;
-    unsigned char* frame = malloc(frame_size * frame_size * 3);
+    unsigned char* frame = malloc(frame_size * frame_size * 4); // Always use 4 channels (RGBA) for output
     if (!frame) {
         DEBUG_PRINT("Failed to allocate memory for frame\n", "");
         stbi_image_free(img);
         return NULL;
     }
 
-    // Initialize frame with white pixels
-    memset(frame, 255, frame_size * frame_size * 3);
+    // Initialize frame with transparent pixels
+    memset(frame, 0, frame_size * frame_size * 4);
 
-    // Copy and rotate tile data
-    for (int y = 0; y < tile_size; y++) {
-        for (int x = 0; x < tile_size; x++) {
-            int src = ((tile_y * tile_size + y) * width + (tile_x * tile_size + x)) * channels;
-            int dst[4] = {
-                ((y) * frame_size + (x)) * 3,
-                ((x) * frame_size + (frame_size - 1 - y)) * 3,
-                ((frame_size - 1 - y) * frame_size + (frame_size - 1 - x)) * 3,
-                ((frame_size - 1 - x) * frame_size + (y)) * 3
-            };
-            for (int i = 0; i < 4; i++) {
-                // Set pixel to black if source pixel is not white
-                if (img[src] < 255 || (channels > 1 && img[src + 1] < 255) || (channels > 2 && img[src + 2] < 255)) {
-                    frame[dst[i]] = frame[dst[i] + 1] = frame[dst[i] + 2] = 0;
+    // Helper function to copy and rotate a tile
+    void copy_rotate_tile(int src_x, int src_y, int dst_x, int dst_y, int rotate) {
+        for (int y = 0; y < tile_size; y++) {
+            for (int x = 0; x < tile_size; x++) {
+                int src_idx = ((src_y * tile_size + y) * width + (src_x * tile_size + x)) * channels;
+                int dst_idx;
+                switch (rotate) {
+                    case 0: dst_idx = ((dst_y * tile_size + y) * frame_size + (dst_x * tile_size + x)) * 4; break;
+                    case 1: dst_idx = ((dst_y * tile_size + x) * frame_size + (dst_x * tile_size + (tile_size-1-y))) * 4; break;
+                    case 2: dst_idx = ((dst_y * tile_size + (tile_size-1-y)) * frame_size + (dst_x * tile_size + (tile_size-1-x))) * 4; break;
+                    case 3: dst_idx = ((dst_y * tile_size + (tile_size-1-x)) * frame_size + (dst_x * tile_size + y)) * 4; break;
+                }
+                
+                // Copy RGB channels
+                for (int c = 0; c < 3; c++) {
+                    frame[dst_idx + c] = img[src_idx + c];
+                }
+                
+                // Set alpha channel
+                if (frame[dst_idx] == 0 && frame[dst_idx + 1] == 0 && frame[dst_idx + 2] == 0) {
+                    frame[dst_idx + 3] = 0; // Transparent for black pixels
+                } else {
+                    frame[dst_idx + 3] = (channels == 4) ? img[src_idx + 3] : 255;
                 }
             }
         }
     }
 
+    // Copy and rotate corner tiles
+    copy_rotate_tile(tile_x, tile_y, 0, 0, 0);       // Top-left
+    copy_rotate_tile(tile_x, tile_y, 2, 0, 1);       // Top-right
+    copy_rotate_tile(tile_x, tile_y, 0, 2, 3);       // Bottom-left
+    copy_rotate_tile(tile_x, tile_y, 2, 2, 2);       // Bottom-right
+
+    // Copy and rotate side tiles
+    copy_rotate_tile(tile_x, tile_y+1, 1, 0, 1);     // Top
+    copy_rotate_tile(tile_x, tile_y+1, 0, 1, 0);     // Left
+    copy_rotate_tile(tile_x, tile_y+1, 2, 1, 2);     // Right
+    copy_rotate_tile(tile_x, tile_y+1, 1, 2, 3);     // Bottom
+
     // Encode frame to PNG
     int png_size;
-    unsigned char* png_data = stbi_write_png_to_mem(frame, 0, frame_size, frame_size, 3, &png_size);
+    unsigned char* png_data = stbi_write_png_to_mem(frame, 0, frame_size, frame_size, 4, &png_size);
     if (!png_data) {
         DEBUG_PRINT("Failed to encode frame to PNG\n", "");
         free(frame);
@@ -357,6 +378,39 @@ char* process_frame(int tile_x, int tile_y) {
     DEBUG_PRINT("Frame processing completed successfully\n", "");
     return base64;
 }
+
+/*
+
+TODO:
+
+Current macros:
+
+ - INCLUDE(extension)
+ - BASE64(extension)
+ - TILE(x, y)
+ - TILES(x, y, w, h)
+ - TILEMAP
+ - MAPWIDTH
+ - FRAME(x, y)
+
+Make the following changes:
+change all macros to INCLUDE with parameters:
+
+ - INCLUDE(file)
+ - INCLUDE(file, BASE64)
+ - INCLUDE(file, TILE, x, y)
+ - INCLUDE(file, TILES, x, y, w, h)
+ - INCLUDE(file, TILESET)           // used to be TILEMAP
+ - INCLUDE(file, WIDTH)
+ - INCLUDE(file, FRAME, x, y)
+ - INCLUDE(file, VERTEX)            // extract vertex shader from glsl file
+ - INCLUDE(file, FRAGMENT)          // extract fragment shader from glsl file
+
+Change SOURCE to be just "./source/", so any filename and extension can be used
+Get rid of all the SOURCE_* definitions
+Adjust the file watching in main to watch every included file dynamically
+
+*/
 
 char* preprocess_content(const char* content) {
     DEBUG_PRINT("Entering preprocess_content\n", "");
