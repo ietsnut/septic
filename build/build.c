@@ -381,8 +381,6 @@ char* process_frame(int tile_x, int tile_y) {
 
 /*
 
-TODO:
-
 Current macros:
 
  - INCLUDE(extension)
@@ -394,21 +392,20 @@ Current macros:
  - FRAME(x, y)
 
 Make the following changes:
-change all macros to INCLUDE with parameters:
+
++ change all macros to INCLUDE with parameters:
 
  - INCLUDE(file)
  - INCLUDE(file, BASE64)
  - INCLUDE(file, TILE, x, y)
  - INCLUDE(file, TILES, x, y, w, h)
  - INCLUDE(file, TILESET)           // used to be TILEMAP
- - INCLUDE(file, WIDTH)
+ - INCLUDE(file, WIDTH)             // echo width of image file
  - INCLUDE(file, FRAME, x, y)
- - INCLUDE(file, VERTEX)            // extract vertex shader from glsl file
- - INCLUDE(file, FRAGMENT)          // extract fragment shader from glsl file
+ 
++ Change SOURCE to be just "./source/", so any filename and extension can be used
++ Change the process_ methods of each macro to use a filename instead
 
-Change SOURCE to be just "./source/", so any filename and extension can be used
-Get rid of all the SOURCE_* definitions
-Adjust the file watching in main to watch every included file dynamically
 
 */
 
