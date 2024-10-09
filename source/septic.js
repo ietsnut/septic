@@ -26,17 +26,17 @@ function random() {
     return ra[ri];
 }
 
-const tm = MAPWIDTH;
-const tb = new Uint8Array([TILEMAP]);
+const tm = INCLUDE(septic.png,WIDTH);
+const tb = new Uint8Array([INCLUDE(septic.png,TILESET)]);
 
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
 const cell      = 48 * window.devicePixelRatio;
 
-shader(gl.VERTEX_SHADER, `INCLUDE(vs)`);
+shader(gl.VERTEX_SHADER, `INCLUDE(septic.vs)`);
 
-shader(gl.FRAGMENT_SHADER, `INCLUDE(fs)`);
+shader(gl.FRAGMENT_SHADER, `INCLUDE(septic.fs)`);
 
 function shader(type, source) {
     var id = gl.createShader(type);
@@ -204,7 +204,7 @@ function dialogue(message, width, height, x, y) {
             <style>
                  @font-face {
                   font-family: 'Pixel'; 
-                  src: url('data:application/octet-stream;base64,BASE64(ttf)') format('truetype');
+                  src: url('data:application/octet-stream;base64,INCLUDE(septic.ttf,BASE64)') format('truetype');
                 }
                 * {
                     box-sizing: border-box;
@@ -227,8 +227,7 @@ function dialogue(message, width, height, x, y) {
                     height: 100%;
                     image-rendering: pixelated;
                     border: 48px solid transparent;
-                    border-image: url('data:image/png;base64,FRAME(4,4)') 16 round;
-                    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAACXBIWXMAAAsTAAALEwEAmpwYAAABI0lEQVRYhe1Zyw6EIAyk+///3D2gpEAf6ApMss5FGG07KS1RpHSCmfOAiCTjTyXjkJecHDfKvTxQpw3ZjB3S8dnb1hONaSzV50PS8Vkxlk1v8CCsXDLzR94gIkv4j/osJzLoUUYjGXokWxcChTU0A0HQZdVjKVDU8Ik1akroEtRcr42ougwI6la7OfouTVhq9OhoRS0uu1FtOts1FQHYbb8XWAWUgbhTwwlKCWbVgvf8xXjbfgBv248BTlBKMKv2tv0g1n+LWQBte3EBecn32H9To0dHqyG8tk9oxzFSUz+erUYPinWkB3fo2XRdvwUoC3xXTej8EKTuQ1NXLchWWEONjfp8SDo+Faa3VLPq59IhHZ+NdO/PUmbkdORPVOikn0rmCythefLVkex/AAAAAElFTkSuQmCC") 16 round;
+                    border-image: url('INCLUDE(septic.png,FRAME,4,4)') 16 round;    
                 }
             </style>
         </head>

@@ -22,15 +22,9 @@
 #define MAX_INCLUDE_FILES 100
 #define MAX_INCLUDED_FILES 100
 
-#define DEBUG 0  // Set to 1 to enable debug output, 0 to disable
-
-#if DEBUG
 #define DEBUG_PRINT(fmt, ...) \
     do { fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, \
                 __LINE__, __func__, __VA_ARGS__); } while (0)
-#else
-#define DEBUG_PRINT(fmt, ...) do {} while (0)
-#endif
 
 // Forward declarations
 char* read_file(const char* filename);
@@ -42,6 +36,7 @@ char* preprocess_content(const char* content, const char* current_file);
  - INCLUDE(file)
  - INCLUDE(file, BASE64)
  - INCLUDE(file, TILE, x, y)
+ - INCLUDE(file, TILES, x, y, w, h)
  - INCLUDE(file, TILESET)           // used to be TILEMAP
  - INCLUDE(file, WIDTH)             // echo width of image file
  - INCLUDE(file, FRAME, x, y)
@@ -50,14 +45,6 @@ char* preprocess_content(const char* content, const char* current_file);
 
 char* processed_files[MAX_INCLUDE_FILES];
 int num_processed_files = 0;
-
-struct inclusion_info {
-    char filename[512];
-    char args[512];
-    struct inclusion_info* children;
-    int num_children;
-    int max_children;
-};
 
 struct included_file {
     char filename[512];
@@ -97,16 +84,9 @@ void free_processed_files() {
     num_processed_files = 0;
 }
 
-struct inclusion_info* process_includes_recursively(const char* filename, const char* args) {
-    struct inclusion_info* info = malloc(sizeof(struct inclusion_info));
-    strcpy(info->filename, filename);
-    strcpy(info->args, args ? args : "");
-    info->children = NULL;
-    info->num_children = 0;
-    info->max_children = 0;
-
+void process_includes_recursively(const char* filename) {
     if (is_file_processed(filename)) {
-        return info;
+        return;
     }
     
     add_processed_file(filename);
@@ -130,7 +110,8 @@ struct inclusion_info* process_includes_recursively(const char* filename, const 
     
     char* content = read_file(full_path);
     if (!content) {
-        return info;
+        DEBUG_PRINT("Failed to read file: %s\n", full_path);
+        return;
     }
     
     const char* input = content;
@@ -140,7 +121,6 @@ struct inclusion_info* process_includes_recursively(const char* filename, const 
             const char* end = strchr(start, ')');
             if (end) {
                 char included_file[256];
-                char included_args[512] = "";
                 size_t len = end - start;
                 strncpy(included_file, start, len);
                 included_file[len] = '\0';
@@ -148,17 +128,9 @@ struct inclusion_info* process_includes_recursively(const char* filename, const 
                 char* comma = strchr(included_file, ',');
                 if (comma) {
                     *comma = '\0';
-                    strcpy(included_args, comma + 1);
                 }
                 
-                struct inclusion_info* child = process_includes_recursively(included_file, included_args);
-                
-                if (info->num_children >= info->max_children) {
-                    info->max_children = info->max_children ? info->max_children * 2 : 8;
-                    info->children = realloc(info->children, info->max_children * sizeof(struct inclusion_info));
-                }
-                info->children[info->num_children++] = *child;
-                free(child);
+                process_includes_recursively(included_file);
                 
                 input = end + 1;
             } else {
@@ -170,30 +142,6 @@ struct inclusion_info* process_includes_recursively(const char* filename, const 
     }
     
     free(content);
-    return info;
-}
-
-void print_inclusion_tree(struct inclusion_info* info, int depth, int is_last, char* prefix) {
-    if (depth > 0) {
-        printf("%s", prefix);
-        printf(is_last ? "└── " : "├── ");
-    }
-    
-    printf("%s", info->filename);
-    if (info->args[0] != '\0') {
-        printf(" (%s)", info->args);
-    }
-    printf("\n");
-    
-    char new_prefix[1024];
-    strcpy(new_prefix, prefix);
-    if (depth > 0) {
-        strcat(new_prefix, is_last ? "    " : "│   ");
-    }
-    
-    for (int i = 0; i < info->num_children; i++) {
-        print_inclusion_tree(&info->children[i], depth + 1, i == info->num_children - 1, new_prefix);
-    }
 }
 
 char* read_file(const char* filename) {
@@ -323,6 +271,8 @@ char* process_base64(const char* filename) {
     return base64;
 }
 
+// ... (previous part of the code remains the same)
+
 char* process_tile(const char* filename, int tile_x, int tile_y) {
     DEBUG_PRINT("Processing TILE: file=%s, x=%d, y=%d\n", filename, tile_x, tile_y);
     char full_path[512];
@@ -336,63 +286,57 @@ char* process_tile(const char* filename, int tile_x, int tile_y) {
     }
     
     int tile_size = 16;
-    unsigned char* tile = malloc(tile_size * tile_size * 4); // Always use 4 channels (RGBA) for output
-    if (!tile) {
-        DEBUG_PRINT("Failed to allocate memory for tile\n", "");
-        stbi_image_free(img);
-        return NULL;
-    }
-
-    // Extract the tile
+    unsigned char* tile = malloc(tile_size * tile_size * channels);
     for (int y = 0; y < tile_size; y++) {
         for (int x = 0; x < tile_size; x++) {
-            int src_idx = ((tile_y * tile_size + y) * width + (tile_x * tile_size + x)) * channels;
-            int dst_idx = (y * tile_size + x) * 4;
-            
-            // Copy RGB channels
-            for (int c = 0; c < 3; c++) {
-                tile[dst_idx + c] = img[src_idx + c];
-            }
-            
-            // Set alpha channel
-            tile[dst_idx + 3] = (channels == 4) ? img[src_idx + 3] : 255;
+            int src = ((tile_y * tile_size + y) * width + (tile_x * tile_size + x)) * channels;
+            int dst = (y * tile_size + x) * channels;
+            memcpy(tile + dst, img + src, channels);
         }
     }
     
-    stbi_image_free(img);
-
-    // Encode tile to PNG
-    int png_size;
-    unsigned char* png_data = stbi_write_png_to_mem(tile, 0, tile_size, tile_size, 4, &png_size);
+    size_t output_length;
+    char* base64 = base64_encode(tile, tile_size * tile_size * channels, &output_length);
     free(tile);
-
-    if (!png_data) {
-        DEBUG_PRINT("Failed to encode tile to PNG\n", "");
-        return NULL;
-    }
-
-    // Encode PNG to base64
-    size_t base64_size;
-    char* base64 = base64_encode(png_data, png_size, &base64_size);
-    free(png_data);
-
-    if (!base64) {
-        DEBUG_PRINT("Failed to encode PNG to base64\n", "");
-        return NULL;
-    }
-
-    DEBUG_PRINT("Tile processed successfully. Base64 length: %zu\n", base64_size);
-
-    // Prepend the data URL scheme
-    char* result = malloc(base64_size + 30);
-    if (!result) {
-        DEBUG_PRINT("Failed to allocate memory for result\n", "");
-        free(base64);
-        return NULL;
-    }
+    stbi_image_free(img);
+    
+    char* result = malloc(output_length + 30);
     sprintf(result, "data:image/png;base64,%s", base64);
     free(base64);
+    return result;
+}
 
+char* process_tiles(const char* filename, int tile_x, int tile_y, int tile_w, int tile_h) {
+    DEBUG_PRINT("Processing TILES: file=%s, x=%d, y=%d, w=%d, h=%d\n", filename, tile_x, tile_y, tile_w, tile_h);
+    char full_path[512];
+    snprintf(full_path, sizeof(full_path), "%s%s", SOURCE, filename);
+    
+    int width, height, channels;
+    unsigned char* img = stbi_load(full_path, &width, &height, &channels, 0);
+    if (!img) {
+        DEBUG_PRINT("Failed to load image: %s\n", full_path);
+        return NULL;
+    }
+    
+    int tile_size = 16;
+    int chunk_w = tile_w * tile_size, chunk_h = tile_h * tile_size;
+    unsigned char* chunk = malloc(chunk_w * chunk_h * channels);
+    for (int y = 0; y < chunk_h; y++) {
+        for (int x = 0; x < chunk_w; x++) {
+            int src = ((tile_y * tile_size + y) * width + (tile_x * tile_size + x)) * channels;
+            int dst = (y * chunk_w + x) * channels;
+            memcpy(chunk + dst, img + src, channels);
+        }
+    }
+    
+    size_t output_length;
+    char* base64 = base64_encode(chunk, chunk_w * chunk_h * channels, &output_length);
+    free(chunk);
+    stbi_image_free(img);
+    
+    char* result = malloc(output_length + 30);
+    sprintf(result, "data:image/png;base64,%s", base64);
+    free(base64);
     return result;
 }
 
@@ -561,13 +505,8 @@ char* process_frame(const char* filename, int tile_x, int tile_y) {
         return NULL;
     }
 
-
-
     DEBUG_PRINT("Frame processing completed successfully\n", "");
-    char* result = malloc(base64_size + 30);
-    sprintf(result, "data:image/png;base64,%s", base64);
-    free(base64);
-    return result;
+    return base64;
 }
 
 char* preprocess_content(const char* content, const char* current_file) {
@@ -620,8 +559,19 @@ char* preprocess_content(const char* content, const char* current_file) {
                     char* tile_content = process_tile(filename, x, y);
                     if (tile_content) {
                         output += sprintf(output, "%s", tile_content);
-                        DEBUG_PRINT("TILE content (first 64 chars): %.64s\n", tile_content);
                         free(tile_content);
+                    }
+                } else if (strcmp(token, "TILES") == 0) {
+                    int x, y, w, h;
+                    sscanf(strtok(NULL, ","), "%d", &x);
+                    sscanf(strtok(NULL, ","), "%d", &y);
+                    sscanf(strtok(NULL, ","), "%d", &w);
+                    sscanf(strtok(NULL, ","), "%d", &h);
+                    DEBUG_PRINT("Processing INCLUDE with TILES for file: '%s', x=%d, y=%d, w=%d, h=%d\n", filename, x, y, w, h);
+                    char* tiles_content = process_tiles(filename, x, y, w, h);
+                    if (tiles_content) {
+                        output += sprintf(output, "%s", tiles_content);
+                        free(tiles_content);
                     }
                 } else if (strcmp(token, "TILESET") == 0) {
                     DEBUG_PRINT("Processing INCLUDE with TILESET for file: '%s'\n", filename);
@@ -683,6 +633,94 @@ char* process_include(const char* filename) {
     return processed;
 }
 
+char* minify_css(const char* css) {
+    char* minified = malloc(strlen(css) + 1);
+    char* output = minified;
+    const char* input = css;
+    int in_comment = 0;
+    int in_string = 0;
+    char string_char = 0;
+
+    while (*input) {
+        if (!in_comment && !in_string && input[0] == '/' && input[1] == '*') {
+            in_comment = 1;
+            input += 2;
+        } else if (in_comment && input[0] == '*' && input[1] == '/') {
+            in_comment = 0;
+            input += 2;
+        } else if (!in_comment && (*input == '"' || *input == '\'')) {
+            in_string = !in_string;
+            string_char = *input;
+            *output++ = *input++;
+        } else if (in_string && *input == string_char && *(input-1) != '\\') {
+            in_string = 0;
+            *output++ = *input++;
+        } else if (!in_comment) {
+            if (in_string || !isspace(*input) || (output > minified && !isspace(*(output-1))))
+                *output++ = *input;
+            input++;
+        } else {
+            input++;
+        }
+    }
+    *output = '\0';
+    return minified;
+}
+
+char* minify_js(const char* js) {
+    char* minified = malloc(strlen(js) + 1);
+    char* output = minified;
+    const char* input = js;
+    int in_string = 0;
+    char string_char = 0;
+    int in_single_line_comment = 0;
+    int in_multi_line_comment = 0;
+
+    while (*input) {
+        // Handle string literals
+        if (!in_single_line_comment && !in_multi_line_comment && !in_string && (*input == '"' || *input == '\'')) {
+            in_string = 1;
+            string_char = *input;
+            *output++ = *input++;
+        } else if (in_string && *input == string_char && *(input-1) != '\\') {
+            in_string = 0;
+            *output++ = *input++;
+        } else if (in_string) {
+            *output++ = *input++;
+        }
+        // Handle single-line comments
+        else if (!in_string && !in_multi_line_comment && input[0] == '/' && input[1] == '/') {
+            in_single_line_comment = 1;
+            input += 2;
+        } else if (in_single_line_comment && (*input == '\n' || *input == '\r')) {
+            in_single_line_comment = 0;
+            *output++ = *input++;
+        }
+        // Handle multi-line comments
+        else if (!in_string && !in_single_line_comment && input[0] == '/' && input[1] == '*') {
+            in_multi_line_comment = 1;
+            input += 2;
+        } else if (in_multi_line_comment && input[0] == '*' && input[1] == '/') {
+            in_multi_line_comment = 0;
+            input += 2;
+        }
+        // Handle regular code
+        else if (!in_single_line_comment && !in_multi_line_comment) {
+            if (isspace(*input)) {
+                if (output > minified && !isspace(*(output-1)))
+                    *output++ = ' ';
+                input++;
+            } else {
+                *output++ = *input++;
+            }
+        } else {
+            input++;
+        }
+    }
+    *output = '\0';
+    return minified;
+}
+
 void compile() {
     DEBUG_PRINT("Starting compilation\n", "");
     
@@ -712,17 +750,9 @@ void compile() {
     free(processed_html);
 }
 
-void free_inclusion_tree(struct inclusion_info* info) {
-    if (info == NULL) {
-        return;
-    }
-    for (int i = 0; i < info->num_children; i++) {
-        free_inclusion_tree(&info->children[i]);
-    }
-    free(info->children);
-}
-
 int main() {
+    DEBUG_PRINT("Starting main function\n", "");
+    
     time_t last_compile = 0;
     int first_run = 1;
 
@@ -739,36 +769,35 @@ int main() {
         free_processed_files();
         
         // Start with septic.html and process includes recursively
-        struct inclusion_info* root = process_includes_recursively("septic.html", NULL);
+        process_includes_recursively("septic.html");
+        
+        DEBUG_PRINT("Checking %d included files for changes\n", num_included_files);
         
         for (int i = 0; i < num_included_files; i++) {
             char full_path[512];
             snprintf(full_path, sizeof(full_path), "%s%s", SOURCE, included_files[i].filename);
             
             time_t current_mod_time = get_last_modified(full_path);
+            DEBUG_PRINT("File: %s, Last modified: %ld, Current: %ld\n", 
+                        included_files[i].filename, 
+                        included_files[i].last_modified, 
+                        current_mod_time);
             
             if (current_mod_time != included_files[i].last_modified) {
                 need_compile = 1;
+                DEBUG_PRINT("Change detected in file: %s\n", included_files[i].filename);
                 included_files[i].last_modified = current_mod_time;
             }
         }
 
         if (need_compile) {
-            // Clear the terminal
-            printf("\033[2J\033[H");
-            
-            // Print the inclusion tree
-            print_inclusion_tree(root, 0, 1, "");
-            printf("\n");
-
+            DEBUG_PRINT("Changes detected, compiling...\n", "");
             compile();
             last_compile = time(NULL);
             first_run = 0;  // Set first_run to 0 after initial compilation
+        } else {
+            DEBUG_PRINT("No changes detected, skipping compilation\n", "");
         }
-
-        // Free the inclusion tree
-        free_inclusion_tree(root);
-        free(root);
 
         // Sleep for a longer duration to reduce CPU usage
         sleep(1); // Sleep for 1 second
@@ -777,5 +806,6 @@ int main() {
     // Clean up
     free_processed_files();
 
+    DEBUG_PRINT("Exiting main function\n", "");
     return 0;
 }
