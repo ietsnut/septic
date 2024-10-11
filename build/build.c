@@ -17,7 +17,7 @@
 #define TARGET "./index.html"
 #define SOURCE "./source/"
 
-#define MAX_FILE_SIZE 2000000
+#define MAX_FILE_SIZE 100000000
 #define MAX_MACRO_SIZE 10000
 #define MAX_INCLUDE_FILES 100
 #define MAX_INCLUDED_FILES 100

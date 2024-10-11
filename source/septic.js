@@ -32,7 +32,6 @@ const tb = new Uint8Array([INCLUDE(septic.png,TILESET)]);
 const canvas    = document.querySelector('canvas');
 const gl        = canvas.getContext("webgl");
 const program   = gl.createProgram();
-const cell      = 48 * window.devicePixelRatio;
 
 shader(gl.VERTEX_SHADER, `INCLUDE(septic.vs)`);
 
@@ -99,15 +98,15 @@ const tilesize  = gl.getUniformLocation(program, "tilesize");
 const scale     = gl.getUniformLocation(program, "scale");
 const position  = gl.getUniformLocation(program, "position");
 const flip      = gl.getUniformLocation(program, "flip");
-
-gl.uniform1f(tilesize, cell);
+const gray      = gl.getUniformLocation(program, "gray");
 
 var grid    = [];
 let keys    = {};
 let right   = true;
 let moving  = false;
-let cols;
-let rows;
+let cell    = 48 * window.devicePixelRatio;
+let cols    = 16;
+let rows    = 16;
 
 resize();
 
@@ -170,6 +169,7 @@ function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     for (var i = 0; i < grid.length; i++) {
         let cube = grid[i];
+        gl.uniform1i(gray, i != 0);
         gl.uniform1i(flip, i == 0 && right);
         gl.uniform2f(tile, cube.tx, cube.ty);
         gl.uniform2f(position, cube.x, -cube.y);
@@ -177,27 +177,27 @@ function draw() {
     }
 }
 
-let popup;
+var popup;
 
 document.addEventListener("click", function() {
+    dialog();
+});
+
+window.onresize = resize;
+window.fullscreenchange = resize;
+         
+function dialog() {
     if (popup) {
         popup.close();
     }
-    dialogue("Look at what i found!", 400, 400, 300, 200);
-});
-
-window.addEventListener("resize",           resize);
-window.addEventListener("fullscreenchange", resize);
-         
-function dialogue(message, width, height, x, y) {
-    const params = `width=${width},height=${height},left=${x},top=${y},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    const params = `width=${cell * 10},height=${cell * 10},left=${window.screenX + ((window.innerWidth - cell * 10)/2)},top=${window.screenY + ((window.innerHeight - cell * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Dialogue", params);
     if (!popup) {
         alert("Failed to open popup. Please check if popups are blocked in your browser.");
         return;
     }
     popup.document.write(`
-        INCLUDE(dialogue.html)
+        INCLUDE(cobalt.html)
     `);
 }
 
@@ -205,10 +205,19 @@ function resize() {
     canvas.width = window.innerWidth * window.devicePixelRatio;
     canvas.height = window.innerHeight * window.devicePixelRatio;
     gl.uniform2f(scale, canvas.width, canvas.height);
-    cols = Math.floor(canvas.width / cell);
-    rows = Math.floor(canvas.height / cell);
+    if (window.innerWidth > window.innerHeight) {
+        cell = window.innerHeight / 20;
+    } else {
+        cell = window.innerWidth / 20;
+    }
+    gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
     requestAnimationFrame(draw);
+    if (popup != undefined) {
+        popup.window.screenX = 0;
+        popup.resizeTo(cell * 10, cell * 10);
+        popup.moveTo(window.screenX + ((window.innerWidth - (cell * 10))/2), window.screenY + ((window.innerHeight - (cell * 10))/2));
+    }
 }
 
 function move() {

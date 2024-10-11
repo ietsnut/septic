@@ -17,6 +17,6 @@ border {
     left: 0;
     box-sizing: border-box;
     image-rendering: pixelated;
-    border: 48px solid transparent;
+    border: 5vmin solid transparent;
     border-image: url('INCLUDE(septic.png,FRAME,5,4)') 16 round;
 }
