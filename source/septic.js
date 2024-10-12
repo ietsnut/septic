@@ -85,7 +85,8 @@ gl.uniform1f(gl.getUniformLocation(program, "tm"), tm);
 gl.uniform1i(gl.getUniformLocation(program, "tileset"), 0);
 
 class Entity {
-    constructor(x, y, tx, ty) {
+    constructor(id, x, y, tx, ty) {
+        this.id = id;
         this.x  = x;
         this.y  = y;
         this.tx = tx;
@@ -105,61 +106,58 @@ let keys    = {};
 let right   = true;
 let moving  = false;
 let cell    = 48 * window.devicePixelRatio;
-let cols    = 16;
-let rows    = 16;
+let cols    = 24;
+let rows    = 24;  
+
+let player;
 
 resize();
 
-let radius = 7;
+const map1 = [INCLUDE(map1.csv)];
 
+function load(map) {
+    grid = [];
 
-function generateSpiralPositions(radius) {
-    let positions = [];
-    let x = 0;
-    let y = 0;
-    let dx = 0;
-    let dy = -1;
-    let maxI = Math.pow(radius * 2 + 1, 2);
+    const mapWidth = cols * 2;
+    const mapHeight = rows * 2;
+    const tilesetWidth = 512;
+    const tilesetHeight = 512;
+    const tileSize = 16;
 
-    for (let i = 0; i < maxI; i++) {
-        if ((-radius <= x && x <= radius) && (-radius <= y && y <= radius)) {
-            if (!(x === 0 && y === 0)) {
-                positions.push({ x: x, y: y });
+    for (var i = 0; i < map.length; i++) {
+        var id = map[i];
+        if (id !== -1) { // -1 represents an empty tile
+            // Calculate map coordinates
+            var mapX = i % mapWidth;
+            var mapY = Math.floor(i / mapWidth);
+
+            // Convert to centric coordinate system
+            var centricX = mapX - mapWidth / 2;
+            var centricY = mapHeight / 2 - mapY - 1; // Subtract 1 to adjust for 0-based indexing
+
+            // Calculate tileset coordinates
+            var tilesetX = (id % (tilesetWidth / tileSize)) * tileSize;
+            var tilesetY = Math.floor(id / (tilesetWidth / tileSize)) * tileSize;
+
+            // Convert tileset coordinates to tile indices
+            var tx = tilesetX / tileSize;
+            var ty = tilesetY / tileSize;
+
+            var entity = new Entity(id, centricX, centricY, tx, ty);
+
+            if (id == 0) {
+                player = entity;
             }
-        }
 
-        if (x === y || (x < 0 && x === -y) || (x > 0 && x === 1 - y)) {
-            let temp = dx;
-            dx = -dy;
-            dy = temp;
-        }
+            grid.push(entity);
 
-        x += dx;
-        y += dy;
+        } else {
+            console.log("empty tile");
+        }
     }
-
-    return positions;
 }
 
-
-grid.push(new Entity(0, 0, 5, 0));
-
-let positions = generateSpiralPositions(radius);
-
-for (let pos of positions) {
-    const r = random();
-    if (r > 220) {
-        grid.push(new Entity(pos.x, pos.y, 3, 6));
-        grid.push(new Entity(pos.x, pos.y + 1, 3, 6));
-        if (r > 245) {
-            grid.push(new Entity(pos.x, pos.y + 2, 0, 6));
-        }
-    }
-    if (r < 10) {
-        grid.push(new Entity(pos.x, pos.y, 3, 3));
-    }
-
-}
+load(map1);
 
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
@@ -169,8 +167,7 @@ function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     for (var i = 0; i < grid.length; i++) {
         let cube = grid[i];
-        gl.uniform1i(gray, i != 0);
-        gl.uniform1i(flip, i == 0 && right);
+        gl.uniform1i(flip, cube.id == 0 && right);
         gl.uniform2f(tile, cube.tx, cube.ty);
         gl.uniform2f(position, cube.x, -cube.y);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
@@ -206,9 +203,9 @@ function resize() {
     canvas.height = window.innerHeight * window.devicePixelRatio;
     gl.uniform2f(scale, canvas.width, canvas.height);
     if (window.innerWidth > window.innerHeight) {
-        cell = (window.innerHeight / 20) * window.devicePixelRatio;
+        cell = (window.innerHeight / (rows + 2)) * window.devicePixelRatio;
     } else {
-        cell = (window.innerWidth / 20)* window.devicePixelRatio;
+        cell = (window.innerWidth / (cols + 2))* window.devicePixelRatio;
     }
     gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -246,7 +243,6 @@ function move() {
 
         requestAnimationFrame(draw);
 
-        let player = grid[0];
         let newX = player.x + moveX;
         let newY = player.y + moveY;
 
@@ -285,6 +281,9 @@ function move() {
 }
 
 document.addEventListener('keydown', (event) => {
+    if (player == undefined) {
+        return;
+    }
     keys[event.key] = true;
     move();
     keys[event.key] = false;

@@ -602,7 +602,26 @@ char* preprocess_content(const char* content, const char* current_file) {
                     DEBUG_PRINT("Processing simple INCLUDE for file: '%s'\n", filename);
                     char* included = process_include(filename);
                     if (included) {
-                        output += sprintf(output, "%s", included);
+                        // Check if the file is a CSV
+                        char* ext = strrchr(filename, '.');
+                        if (ext && strcmp(ext, ".csv") == 0) {
+                            // Process CSV content
+                            char* csv_content = included;
+                            while (*csv_content) {
+                                if (*csv_content == '\n') {
+                                    // Add a comma before the newline
+                                    *output++ = ',';
+                                }
+                                *output++ = *csv_content++;
+                            }
+                            // Remove the last comma if it's at the end
+                            if (*(output - 1) == ',') {
+                                output--;
+                            }
+                        } else {
+                            // Non-CSV file, process as before
+                            output += sprintf(output, "%s", included);
+                        }
                         free(included);
                     }
                 } else if (strcmp(token, "BASE64") == 0) {
