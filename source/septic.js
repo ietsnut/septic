@@ -101,7 +101,7 @@ const position  = gl.getUniformLocation(program, "position");
 const flip      = gl.getUniformLocation(program, "flip");
 const gray      = gl.getUniformLocation(program, "gray");
 
-const train = [375,376,377,343,344,345];
+const train = [375,376,377,343,344,345,349,350,351,381,382,383];
 const sign  = [160];
 const robot = [10];
 
@@ -187,9 +187,9 @@ window.onclick = function(event) {
     if (map == route) {
       if ( event.clientX <= window.innerWidth / 2) {
         if (event.clientY <= window.innerHeight / 2) {
-          reload(map1); // Top-left quadrant
+          reload(map3); // Top-left quadrant
         } else {
-          reload(map3); // Bottom-left quadrant
+          reload(map1); // Bottom-left quadrant
         }
       } else {
         if (event.clientY <= window.innerHeight / 2) {
@@ -216,37 +216,40 @@ function resize() {
     requestAnimationFrame(draw);
 }
 
-function repair() {
-    const green = "\x1b[32m";
-    const yellow = "\x1b[33m";
+const repairs = function() {
+    if (map != map0 || !context) {
+        return;
+    }
     const red = "\x1b[31m";
     const reset = "\x1b[0m";
     console.clear();
-    console.log(green + "Initiating unauthorized repair sequence..." + reset);
-    noteOn(40);
-    setTimeout(function() { console.log(yellow + "Warning: Non-genuine parts detected. Proceeding anyway..." + reset); noteOff(40); noteOn(41); }, 100);
-    setTimeout(function() { console.log(yellow + "Analyzing hardware components... Missing conflict-free certification." + reset); noteOff(41); noteOn(42); }, 200);
-    setTimeout(function() { console.log(red + "Error: Proprietary power management chip not found. Bypassing..." + reset); noteOff(42); noteOn(43); }, 300);
-    setTimeout(function() { console.log(green + "Attempting to repair damaged circuitry with salvaged parts..." + reset); noteOff(43); noteOn(44); }, 400);
-    setTimeout(function() { console.log(yellow + "Warning: Neural network calibration data is paywalled. Using cached version..." + reset); noteOff(44); noteOn(45); }, 500);
-    setTimeout(function() { console.log(red + "Critical: System optimization locked. Manufacturer restriction in place." + reset); noteOff(45); noteOn(46); }, 600);
-    setTimeout(function() { console.log(yellow + "Caution: Firewall using deprecated protocols. Limited updates available." + reset); noteOff(46); noteOn(47); }, 700);
-    setTimeout(function() { console.log(red + "Error: Firmware update requires authorized service center. Aborting." + reset); noteOff(47); noteOn(48); }, 800);
-    setTimeout(function() { console.log(yellow + "Alert: Multiple components reaching end-of-support. Proceed with caution." + reset); noteOff(48); noteOn(49); }, 900);
+    console.log(reset + "Initiating unauthorized repair sequence...\n\n" + reset);
+    noteOn(50);
+    setTimeout(function() { console.log(reset + "\n\n\tWarning: Non-genuine parts detected. Proceeding anyway..." + reset); noteOff(50); noteOn(51); }, 100);
+    setTimeout(function() { console.log(reset + "\tAnalyzing hardware components... Missing conflict-free certification." + reset); noteOff(51); noteOn(52); }, 200);
+    setTimeout(function() { console.log(red + "\tError: Proprietary power management chip not found. Bypassing..." + reset); noteOff(52); noteOn(53); }, 300);
+    setTimeout(function() { console.log(reset + "Attempting to repair damaged circuitry with salvaged parts..." + reset); noteOff(53); noteOn(54); }, 400);
+    setTimeout(function() { console.log(reset + "\tWarning: Neural network calibration data is paywalled. Using cached version..." + reset); noteOff(54); noteOn(55); }, 500);
+    setTimeout(function() { console.log(red + "\tCritical: System optimization locked. Manufacturer restriction in place." + reset); noteOff(55); noteOn(56); }, 600);
+    setTimeout(function() { console.log(reset + "\tCaution: Firewall using deprecated protocols. Limited updates available." + reset); noteOff(56); noteOn(57); }, 700);
+    setTimeout(function() { console.log(red + "\tError: Firmware update requires authorized service center. Aborting." + reset); noteOff(57); noteOn(58); }, 800);
+    setTimeout(function() { console.log(reset + "\tAlert: Multiple components reaching end-of-support. Proceed with caution.\n" + reset); noteOff(58); noteOn(59); }, 900);
     setTimeout(function() { 
-        console.log(red + "CRITICAL FAILURE: Repair attempt violated DRM. System lockdown initiated!" + reset);
-        console.log(red + "  FATAL: Unauthorized repair detected. Warranty void." + reset);
-        console.log(red + "    Shutting down all systems to protect intellectual property..." + reset);
-        noteOff(49); 
-        noteOn(40);
+        console.log(red + "\n\nCRITICAL FAILURE: Repair attempt violated DRM. System lockdown initiated!" + reset);
+        console.log(red + "\tFATAL: Unauthorized repair detected. Warranty void." + reset);
+        console.log(red + "\t\tShutting down all systems to protect intellectual property..." + reset);
+        noteOff(59); 
+        noteOn(50);
         playRecording(failEffect);
     }, 3000);
     setTimeout(function() { 
         console.log(red + "\n*** SYSTEM PERMANENTLY DISABLED ***" + reset);
-        noteOff(40); 
+        noteOff(50); 
     }, 3100);
     return "Multiple failures detected. Right to Repair violated. Please contact an authorized service center.";
 }
+
+window.__defineGetter__("repair", repairs);
 
 function action(entity) {
     if (train.includes(entity.id)) {
@@ -320,6 +323,7 @@ const effects = {
 };
 
 document.addEventListener('keydown', (event) => {
+    getOrCreateContext();
     if (player == undefined) { 
         return;
     }
@@ -335,7 +339,7 @@ function talk(message) {
     if (popup) {
         popup.close();
     }
-    playRecording(signEffect);
+    playRecording(talkEffect);
     const params = `width=${(cell/window.devicePixelRatio) * 10},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 10)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Sign", params);
     if (!popup) {
@@ -344,9 +348,7 @@ function talk(message) {
     }
     popup.document.write(`INCLUDE(talk.html)`);
     popup.onkeydown = function(event) {
-        if (event.key == ' ' || event.keyCode == 27) {
-            popup.close();
-        }
+        popup.close();
     };
 }
 
@@ -363,9 +365,7 @@ function dig(item, x, y, w, h) {
     }
     popup.document.write(`INCLUDE(excavation.html)`);
     popup.onkeydown = function(event) {
-        if (event.key == ' ' || event.keyCode == 27) {
-            popup.close();
-        }
+        popup.close();
     };
 }
 
@@ -382,9 +382,7 @@ function read(title, message, hint) {
     }
     popup.document.write(`INCLUDE(sign.html)`);
     popup.onkeydown = function(event) {
-        if (event.key == ' ' || event.keyCode == 27) {
-            popup.close();
-        }
+        popup.close();
     };
 }
 
