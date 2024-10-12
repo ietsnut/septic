@@ -120,40 +120,14 @@ const map1 = [INCLUDE(map1.csv)];
 
 function load(map) {
     grid = [];
-
-    const mapWidth = cols * 2;
-    const mapHeight = rows * 2;
-    const tilesetWidth = 512;
-    const tilesetHeight = 512;
-    const tileSize = 16;
-
     for (var i = 0; i < map.length; i++) {
         var id = map[i];
-        if (id !== -1) { // -1 represents an empty tile
-            // Calculate map coordinates
-            var mapX = i % mapWidth;
-            var mapY = Math.floor(i / mapWidth);
-
-            // Convert to centric coordinate system
-            var centricX = mapX - mapWidth / 2;
-            var centricY = mapHeight / 2 - mapY - 1; // Subtract 1 to adjust for 0-based indexing
-
-            // Calculate tileset coordinates
-            var tilesetX = (id % (tilesetWidth / tileSize)) * tileSize;
-            var tilesetY = Math.floor(id / (tilesetWidth / tileSize)) * tileSize;
-
-            // Convert tileset coordinates to tile indices
-            var tx = tilesetX / tileSize;
-            var ty = tilesetY / tileSize;
-
-            var entity = new Entity(id, centricX, centricY, tx, ty);
-
+        if (id !== -1) {
+            var entity = new Entity(id, (i % (cols * 2)) - (cols * 2) / 2, (rows * 2) / 2 - (Math.floor(i / (cols * 2))) - 1, ((id % (tm / 16)) * 16) / 16, (Math.floor(id / (tm / 16)) * 16) / 16);
             if (id == 0) {
                 player = entity;
             }
-
             grid.push(entity);
-
         }
     }
 }
@@ -192,11 +166,6 @@ function resize() {
     gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
     requestAnimationFrame(draw);
-    if (popup != undefined) {
-        popup.window.screenX = 0;
-        popup.resizeTo((cell/window.devicePixelRatio) * 10, (cell/window.devicePixelRatio) * 10);
-        popup.moveTo(window.screenX + ((window.innerWidth - ((cell/window.devicePixelRatio) * 10))/2), window.screenY + ((window.innerHeight - ((cell/window.devicePixelRatio) * 10))/2));
-    }
 }
 
 function move() {
@@ -231,7 +200,7 @@ function move() {
                     alert("travelling");
                     return;
                 } else if (sign.includes(entity.id)) {
-                    read("Katanga Copperbelt<br><br>One of the richest deposits of copper and cobalt in the world.'<br>");
+                    read("The Copperbelt", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
                     return;
                 }
                 return;
@@ -257,22 +226,22 @@ function move() {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (player == undefined) {
+    if (player == undefined) { 
         return;
     }
     keys[event.key] = true;
     move();
     keys[event.key] = false;
     if (event.key == ' ') {
-        dig();
+        dig("Electroplate", 0, 21, 13, 7);
     }
 });
 
-function dig() {
+function dig(item, x, y, w, h) {
     if (popup) {
         popup.close();
     }
-    const params = `width=${(cell/window.devicePixelRatio) * 10},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 10)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 20},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 20)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Excavation", params);
     if (!popup) {
         alert("Failed to open popup. Please check if popups are blocked in your browser.");
@@ -286,7 +255,7 @@ function dig() {
     };
 }
 
-function read(message) {
+function read(title, message, hint) {
     if (popup) {
         popup.close();
     }

@@ -2,55 +2,16 @@
         <head> 
             <title>Excavation</title>
             <style>
-                 @font-face {
-                  font-family: 'Pixel'; 
-                  src: url('data:application/octet-stream;base64,INCLUDE(septic.ttf,BASE64)') format('truetype');
-                }
-                * {
-                    box-sizing: border-box;
-                    font-family: 'Pixel';
-                    user-select: none;
-                    font-smooth: never;
-                    -webkit-font-smoothing : none;
-                    image-rendering: pixelated;
-                }
-                html, body {
-                    background-color: black;
-                    color: white;
-                    font-size: 5vmin;
-                    min-height: 100%;
-                    height: 100vh;
-                    overflow: hidden;
-                    width: 100%;
-                    margin: 0;
-                }
-                body {
-                    border: 10vmin solid transparent;
-                    border-image: url('INCLUDE(septic.png,FRAME,4,3)') 16 round;    
-                }
-                img {
-                    width: ${cell*2}px;
-                    height: auto;
-                }
-                p {
-                    width: 100%;
-                    text-align: center;
-                }
-                ::-webkit-scrollbar {
-                  display: none;
-                }
-                ::-webkit-scrollbar-button {
-                  display: none;
-                }
+                INCLUDE(excavation.css)
             </style>
         </head>
         <body>
-            <img src="INCLUDE(septic.png,TILES,14,12,2,2)">
-            <p>You found a crowbar!</p>
-            <p>Armed with a simple crowbar to exploit a mineral vein, in extremely dangerous conditions…<br><br>
+            <img src='INCLUDE(septic.png,TILE,19,11)'>
+            <p>You found: <u>${item}</u>!</p>
+            <img style="width: ${cell*17}px;" src='INCLUDE(septic.png,TILES,0,21,13,7)'>
+            <p class="hint">Armed with a simple crowbar to exploit a mineral vein, in extremely dangerous conditions…<br><br>
         One to two million Congolese people depend on this production directly or indirectly.</p>
-            <p>The head torches of the miners light up the pits where they dig for cobalt tens of metres below Kasulo, where residents and miners have dug
-hundreds of pits to extract this valuable mineral, May 2015. </p>
+        <img src='INCLUDE(septic.png,TILE,19,11)'>
         <border></border>
         </body>
         </html>
