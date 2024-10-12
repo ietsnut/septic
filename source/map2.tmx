@@ -3,7 +3,7 @@
  <editorsettings>
   <export target="map2.csv" format="csv"/>
  </editorsettings>
- <tileset firstgid="1" source="../../../../Desktop/bitter.tsx"/>
+ <tileset firstgid="1" source="tileset.tsx"/>
  <layer id="1" name="Tile Layer 1" width="48" height="48">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
