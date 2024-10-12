@@ -169,7 +169,7 @@ function resize() {
     requestAnimationFrame(draw);
 }
 
-function move() {
+function move(event) {
     let moveX = 0;
     let moveY = 0;
     if (keys['w']) {
@@ -211,6 +211,7 @@ function move() {
         player.y = newY;
         requestAnimationFrame(draw);
         if (moving) return;
+        if (effects.hasOwnProperty(event.key)) {noteOn(effects[event.key]);}
         player.ty = player.ty === 1 ? 2 : 1;
         requestAnimationFrame(draw);
         moving = true;
@@ -228,16 +229,22 @@ function move() {
 
 INCLUDE(music.js)
 
+const effects = {
+    d: 50,
+    s: 52,
+    a: 54,
+    w: 56
+};
+
 document.addEventListener('keydown', (event) => {
     if (player == undefined) { 
         return;
     }
     keys[event.key] = true;
-    move();
+    move(event);
     keys[event.key] = false;
     if (event.key == ' ') {
         dig("Electroplate", 0, 21, 13, 7);
-        startPlaying();
     }
 });
 
@@ -245,6 +252,7 @@ function dig(item, x, y, w, h) {
     if (popup) {
         popup.close();
     }
+    playRecording(succEffect);
     const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 20},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 20)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Excavation", params);
     if (!popup) {
@@ -263,6 +271,7 @@ function read(title, message, hint) {
     if (popup) {
         popup.close();
     }
+    playRecording(signEffect);
     const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Sign", params);
     if (!popup) {
@@ -279,6 +288,9 @@ function read(title, message, hint) {
 
 document.addEventListener('keyup', (event) => {
     delete keys[event.key];
+  if (effects.hasOwnProperty(event.key)) {
+    noteOff(effects[event.key]);
+  }
 });
 
 resize();
