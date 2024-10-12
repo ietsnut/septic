@@ -269,7 +269,7 @@ function dialog() {
     if (popup) {
         popup.close();
     }
-    const params = `width=${cell * 10},height=${cell * 10},left=${window.screenX + ((window.innerWidth - cell * 10)/2)},top=${window.screenY + ((window.innerHeight - cell * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    const params = `width=${(cell/window.devicePixelRatio) * 10},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 10)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Dialogue", params);
     if (!popup) {
         alert("Failed to open popup. Please check if popups are blocked in your browser.");
@@ -340,17 +340,17 @@ function resize() {
     canvas.height = window.innerHeight * window.devicePixelRatio;
     gl.uniform2f(scale, canvas.width, canvas.height);
     if (window.innerWidth > window.innerHeight) {
-        cell = window.innerHeight / 20;
+        cell = (window.innerHeight / 20) * window.devicePixelRatio;
     } else {
-        cell = window.innerWidth / 20;
+        cell = (window.innerWidth / 20)* window.devicePixelRatio;
     }
     gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
     requestAnimationFrame(draw);
     if (popup != undefined) {
         popup.window.screenX = 0;
-        popup.resizeTo(cell * 10, cell * 10);
-        popup.moveTo(window.screenX + ((window.innerWidth - (cell * 10))/2), window.screenY + ((window.innerHeight - (cell * 10))/2));
+        popup.resizeTo((cell/window.devicePixelRatio) * 10, (cell/window.devicePixelRatio) * 10);
+        popup.moveTo(window.screenX + ((window.innerWidth - ((cell/window.devicePixelRatio) * 10))/2), window.screenY + ((window.innerHeight - ((cell/window.devicePixelRatio) * 10))/2));
     }
 }
 
