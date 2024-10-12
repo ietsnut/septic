@@ -102,6 +102,7 @@ const flip      = gl.getUniformLocation(program, "flip");
 const gray      = gl.getUniformLocation(program, "gray");
 
 const train = [375,376,377,343,344,345];
+const sign  = [160];
 
 var grid    = [];
 let keys    = {};
@@ -229,6 +230,9 @@ function move() {
                 if (train.includes(entity.id)) {
                     alert("travelling");
                     return;
+                } else if (sign.includes(entity.id)) {
+                    read("Katanga Copperbelt<br><br>One of the richest deposits of copper and cobalt in the world.'<br>");
+                    return;
                 }
                 return;
             }
@@ -275,6 +279,29 @@ function dig() {
         return;
     }
     popup.document.write(`INCLUDE(excavation.html)`);
+    popup.onkeydown = function(event) {
+        if (event.key == ' ' || event.keyCode == 27) {
+            popup.close();
+        }
+    };
+}
+
+function read(message) {
+    if (popup) {
+        popup.close();
+    }
+    const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    popup = window.open(null, "Sign", params);
+    if (!popup) {
+        alert("Failed to open popup. Please check if popups are blocked in your browser.");
+        return;
+    }
+    popup.document.write(`INCLUDE(sign.html)`);
+    popup.onkeydown = function(event) {
+        if (event.key == ' ' || event.keyCode == 27) {
+            popup.close();
+        }
+    };
 }
 
 document.addEventListener('keyup', (event) => {
