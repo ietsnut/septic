@@ -323,6 +323,85 @@ char* process_base64(const char* filename) {
     return base64;
 }
 
+char* process_tiles(const char* filename, int tile_x, int tile_y, int tile_w, int tile_h) {
+    DEBUG_PRINT("Processing TILES: file=%s, x=%d, y=%d, w=%d, h=%d\n", filename, tile_x, tile_y, tile_w, tile_h);
+    char full_path[512];
+    snprintf(full_path, sizeof(full_path), "%s%s", SOURCE, filename);
+    
+    int width, height, channels;
+    unsigned char* img = stbi_load(full_path, &width, &height, &channels, 0);
+    if (!img) {
+        DEBUG_PRINT("Failed to load image: %s\n", full_path);
+        return NULL;
+    }
+    
+    int tile_size = 16;
+    int output_width = tile_w * tile_size;
+    int output_height = tile_h * tile_size;
+    unsigned char* tiles = malloc(output_width * output_height * 4); // Always use 4 channels (RGBA) for output
+    if (!tiles) {
+        DEBUG_PRINT("Failed to allocate memory for tiles\n", "");
+        stbi_image_free(img);
+        return NULL;
+    }
+
+    // Extract the tiles
+    for (int y = 0; y < tile_h; y++) {
+        for (int x = 0; x < tile_w; x++) {
+            for (int py = 0; py < tile_size; py++) {
+                for (int px = 0; px < tile_size; px++) {
+                    int src_idx = (((tile_y + y) * tile_size + py) * width + ((tile_x + x) * tile_size + px)) * channels;
+                    int dst_idx = ((y * tile_size + py) * output_width + (x * tile_size + px)) * 4;
+                    
+                    // Copy RGB channels
+                    for (int c = 0; c < 3; c++) {
+                        tiles[dst_idx + c] = img[src_idx + c];
+                    }
+                    
+                    // Set alpha channel
+                    tiles[dst_idx + 3] = (channels == 4) ? img[src_idx + 3] : 255;
+                }
+            }
+        }
+    }
+    
+    stbi_image_free(img);
+
+    // Encode tiles to PNG
+    int png_size;
+    unsigned char* png_data = stbi_write_png_to_mem(tiles, 0, output_width, output_height, 4, &png_size);
+    free(tiles);
+
+    if (!png_data) {
+        DEBUG_PRINT("Failed to encode tiles to PNG\n", "");
+        return NULL;
+    }
+
+    // Encode PNG to base64
+    size_t base64_size;
+    char* base64 = base64_encode(png_data, png_size, &base64_size);
+    free(png_data);
+
+    if (!base64) {
+        DEBUG_PRINT("Failed to encode PNG to base64\n", "");
+        return NULL;
+    }
+
+    DEBUG_PRINT("Tiles processed successfully. Base64 length: %zu\n", base64_size);
+
+    // Prepend the data URL scheme
+    char* result = malloc(base64_size + 30);
+    if (!result) {
+        DEBUG_PRINT("Failed to allocate memory for result\n", "");
+        free(base64);
+        return NULL;
+    }
+    sprintf(result, "data:image/png;base64,%s", base64);
+    free(base64);
+
+    return result;
+}
+
 char* process_tile(const char* filename, int tile_x, int tile_y) {
     DEBUG_PRINT("Processing TILE: file=%s, x=%d, y=%d\n", filename, tile_x, tile_y);
     char full_path[512];
@@ -641,6 +720,19 @@ char* preprocess_content(const char* content, const char* current_file) {
                         output += sprintf(output, "%s", tile_content);
                         DEBUG_PRINT("TILE content (first 64 chars): %.64s\n", tile_content);
                         free(tile_content);
+                    }
+                } else if (strcmp(token, "TILES") == 0) {
+                    int x, y, w, h;
+                    sscanf(strtok(NULL, ","), "%d", &x);
+                    sscanf(strtok(NULL, ","), "%d", &y);
+                    sscanf(strtok(NULL, ","), "%d", &w);
+                    sscanf(strtok(NULL, ","), "%d", &h);
+                    DEBUG_PRINT("Processing INCLUDE with TILES for file: '%s', x=%d, y=%d, w=%d, h=%d\n", filename, x, y, w, h);
+                    char* tiles_content = process_tiles(filename, x, y, w, h);
+                    if (tiles_content) {
+                        output += sprintf(output, "%s", tiles_content);
+                        DEBUG_PRINT("TILES content (first 64 chars): %.64s\n", tiles_content);
+                        free(tiles_content);
                     }
                 } else if (strcmp(token, "TILESET") == 0) {
                     DEBUG_PRINT("Processing INCLUDE with TILESET for file: '%s'\n", filename);

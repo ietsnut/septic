@@ -101,6 +101,8 @@ const position  = gl.getUniformLocation(program, "position");
 const flip      = gl.getUniformLocation(program, "flip");
 const gray      = gl.getUniformLocation(program, "gray");
 
+const train = [375,376,377,343,344,345];
+
 var grid    = [];
 let keys    = {};
 let right   = true;
@@ -151,8 +153,6 @@ function load(map) {
 
             grid.push(entity);
 
-        } else {
-            console.log("empty tile");
         }
     }
 }
@@ -176,27 +176,8 @@ function draw() {
 
 var popup;
 
-document.addEventListener("click", function() {
-    dialog();
-});
-
 window.onresize = resize;
 window.fullscreenchange = resize;
-         
-function dialog() {
-    if (popup) {
-        popup.close();
-    }
-    const params = `width=${(cell/window.devicePixelRatio) * 10},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 10)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
-    popup = window.open(null, "Dialogue", params);
-    if (!popup) {
-        alert("Failed to open popup. Please check if popups are blocked in your browser.");
-        return;
-    }
-    popup.document.write(`
-        INCLUDE(cobalt.html)
-    `);
-}
 
 function resize() {
     canvas.width = window.innerWidth * window.devicePixelRatio;
@@ -218,10 +199,8 @@ function resize() {
 }
 
 function move() {
-
     let moveX = 0;
     let moveY = 0;
-
     if (keys['w']) {
         moveY += 1;
     }
@@ -234,36 +213,31 @@ function move() {
     if (keys['d']) {
         moveX += 1;
     }
-
     if (moveX !== 0 || moveY !== 0) {
-
         if (moveY == 0) {
             right = moveX > 0 || keys["d"];
         }
-
         requestAnimationFrame(draw);
-
         let newX = player.x + moveX;
         let newY = player.y + moveY;
-
         if (newX < -(cols / 2) ||  newX > cols / 2 || newY < -(rows / 2) ||  newY > rows / 2) {
             return;
         }
-
         for (let i = 1; i < grid.length; i++) {
             let entity = grid[i];
             if (entity.x === newX && entity.y === newY) {
+                if (train.includes(entity.id)) {
+                    alert("travelling");
+                    return;
+                }
                 return;
             }
         }
-
         player.x = newX;
         player.y = newY;
         requestAnimationFrame(draw);
-
         if (moving) return;
         player.ty = player.ty === 1 ? 2 : 1;
-
         requestAnimationFrame(draw);
         moving = true;
         setTimeout(function() { 
@@ -275,9 +249,7 @@ function move() {
             requestAnimationFrame(draw);
             moving = false;
         }, 200);
-
     }
-
 }
 
 document.addEventListener('keydown', (event) => {
@@ -287,7 +259,23 @@ document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
     move();
     keys[event.key] = false;
+    if (event.key == ' ') {
+        dig();
+    }
 });
+
+function dig() {
+    if (popup) {
+        popup.close();
+    }
+    const params = `width=${(cell/window.devicePixelRatio) * 10},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 10)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    popup = window.open(null, "Excavation", params);
+    if (!popup) {
+        alert("Failed to open popup. Please check if popups are blocked in your browser.");
+        return;
+    }
+    popup.document.write(`INCLUDE(excavation.html)`);
+}
 
 document.addEventListener('keyup', (event) => {
     delete keys[event.key];

@@ -1,6 +1,6 @@
         <html>
         <head> 
-            <title>Item</title>
+            <title>Excavation</title>
             <style>
                  @font-face {
                   font-family: 'Pixel'; 
@@ -20,16 +20,16 @@
                     font-size: 5vmin;
                     min-height: 100%;
                     height: 100vh;
-                    overflow-y: scroll;
+                    overflow: hidden;
                     width: 100%;
                     margin: 0;
                 }
                 body {
                     border: 10vmin solid transparent;
-                    border-image: url('INCLUDE(septic.png,FRAME,1,4)') 16 round;    
+                    border-image: url('INCLUDE(septic.png,FRAME,4,3)') 16 round;    
                 }
                 img {
-                    width: 100%;
+                    width: ${cell*2}px;
                     height: auto;
                 }
                 ::-webkit-scrollbar {
@@ -44,9 +44,9 @@
             </style>
         </head>
         <body>
+            <img src="INCLUDE(septic.png,TILES,14,12,2,2)">
             <p>Armed with a simple crowbar to exploit a mineral vein, in extremely dangerous conditions…<br><br>
         One to two million Congolese people depend on this production directly or indirectly.</p>
-            <img src="data:image/png;base64,INCLUDE(cobalt.png,BASE64)">
             <p>The head torches of the miners light up the pits where they dig for cobalt tens of metres below Kasulo, where residents and miners have dug
 hundreds of pits to extract this valuable mineral, May 2015. 
             <br><br><gray>(Still taken from footage shot by a miner using a GoPro camera for Amnesty
