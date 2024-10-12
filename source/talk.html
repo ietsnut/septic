@@ -1,0 +1,64 @@
+        <html>
+        <head> 
+            <title>Talking</title>
+            <style>
+                 @font-face {
+                  font-family: 'Pixel'; 
+                  src: url('data:application/octet-stream;base64,INCLUDE(septic.ttf,BASE64)') format('truetype');
+                }
+                * {
+                    box-sizing: border-box;
+                    font-family: 'Pixel';
+                    user-select: none;
+                    font-smooth: never;
+                    -webkit-font-smoothing : none;
+                    image-rendering: pixelated;
+                }
+                html, body {
+                    background-color: black;
+                    color: white;
+                    font-size: ${cell/2}px;
+                    min-height: 100%;
+                    height: 100vh;
+                    overflow: hidden;
+                    width: 100%;
+                    margin: 0;
+                }
+                body {
+                    border: ${cell}px solid transparent;
+                    border-image: url('INCLUDE(septic.png,FRAME,0,3)') 16 round;    
+                }
+                img {
+                    width: ${cell}px;
+                    height: auto;
+                    display: block;
+                    margin: auto;
+                    padding: 0;
+                }
+                p {
+                    width: 100%;
+                    padding: 0 ${cell/2};
+                    line-height: 1.6;
+                    margin: 0;
+                }
+                .hint {
+                    color: gray;
+                    font-style: italic;
+                }
+                .title {
+                    text-decoration: underline;
+                }
+                ::-webkit-scrollbar {
+                  display: none;
+                }
+                ::-webkit-scrollbar-button {
+                  display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <br>
+            <p>${message}</p>
+        <border></border>
+        </body>
+        </html>

@@ -8,6 +8,7 @@ body, html, canvas {
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    cursor: url('INCLUDE(septic.png,TILE,9,14)') 16 16, auto;
 }
 border {
     position: fixed;
@@ -18,5 +19,24 @@ border {
     box-sizing: border-box;
     image-rendering: pixelated;
     border: 3.846153846153846vmin solid transparent;
-    border-image: url('INCLUDE(septic.png,FRAME,5,3)') 16 round;
+}
+#b0 {
+    border-image: url('INCLUDE(septic.png,FRAME,7,3)') 16 round;
+    display: block;
+}
+#b1 {
+    border-image: url('INCLUDE(septic.png,FRAME,4,3)') 16 round;
+    display: none;
+}
+#b2 {
+    border-image: url('INCLUDE(septic.png,FRAME,4,3)') 16 round;
+    display: none;
+}
+#b3 {
+    border-image: url('INCLUDE(septic.png,FRAME,4,3)') 16 round;
+    display: none;
+}
+#b4 {
+    border-image: url('INCLUDE(septic.png,FRAME,3,3)') 16 round;
+    display: none;
 }

@@ -103,6 +103,7 @@ const gray      = gl.getUniformLocation(program, "gray");
 
 const train = [375,376,377,343,344,345];
 const sign  = [160];
+const robot = [10];
 
 var grid    = [];
 let keys    = {};
@@ -116,11 +117,17 @@ let player;
 
 resize();
 
+const map0 = [INCLUDE(map0.csv)];
 const map1 = [INCLUDE(map1.csv)];
 const map2 = [INCLUDE(map2.csv)];
 const map3 = [INCLUDE(map3.csv)];
 
-function load(map) {
+const route = [INCLUDE(route.csv)];
+
+var map = map0;
+load();
+
+function load() {
     grid = [];
     for (var i = 0; i < map.length; i++) {
         var id = map[i];
@@ -134,7 +141,27 @@ function load(map) {
     }
 }
 
-load(map3);
+function reload(target) {
+    map = target;
+    grid = [];
+    document.getElementById("b0").style.display = 'none';
+    document.getElementById("b1").style.display = 'none';
+    document.getElementById("b2").style.display = 'none';
+    document.getElementById("b3").style.display = 'none';
+    document.getElementById("b4").style.display = 'none';
+    if (target == route) {
+        document.getElementById("b4").style.display = 'block';
+    } else if (target == map0) {
+        document.getElementById("b0").style.display = 'block';
+    } else if (target == map1) {
+        document.getElementById("b1").style.display = 'block';
+    } else if (target == map2) {
+        document.getElementById("b2").style.display = 'block';
+    } else if (target == map3) {
+        document.getElementById("b3").style.display = 'block';
+    }
+    load(map);
+}
 
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
@@ -156,6 +183,25 @@ var popup;
 window.onresize = resize;
 window.fullscreenchange = resize;
 
+window.onclick = function(event) {
+    if (map == route) {
+      if ( event.clientX <= window.innerWidth / 2) {
+        if (event.clientY <= window.innerHeight / 2) {
+          reload(map1); // Top-left quadrant
+        } else {
+          reload(map3); // Bottom-left quadrant
+        }
+      } else {
+        if (event.clientY <= window.innerHeight / 2) {
+          reload(map2); // Top-right quadrant
+        } else {
+          reload(map0); // Bottom-right quadrant
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+};
+
 function resize() {
     canvas.width = window.innerWidth * window.devicePixelRatio;
     canvas.height = window.innerHeight * window.devicePixelRatio;
@@ -168,6 +214,48 @@ function resize() {
     gl.uniform1f(tilesize, cell);
     gl.viewport(0, 0, canvas.width, canvas.height);
     requestAnimationFrame(draw);
+}
+
+function repair() {
+    const green = "\x1b[32m";
+    const yellow = "\x1b[33m";
+    const red = "\x1b[31m";
+    const reset = "\x1b[0m";
+    console.clear();
+    console.log(green + "Initiating unauthorized repair sequence..." + reset);
+    noteOn(40);
+    setTimeout(function() { console.log(yellow + "Warning: Non-genuine parts detected. Proceeding anyway..." + reset); noteOff(40); noteOn(41); }, 100);
+    setTimeout(function() { console.log(yellow + "Analyzing hardware components... Missing conflict-free certification." + reset); noteOff(41); noteOn(42); }, 200);
+    setTimeout(function() { console.log(red + "Error: Proprietary power management chip not found. Bypassing..." + reset); noteOff(42); noteOn(43); }, 300);
+    setTimeout(function() { console.log(green + "Attempting to repair damaged circuitry with salvaged parts..." + reset); noteOff(43); noteOn(44); }, 400);
+    setTimeout(function() { console.log(yellow + "Warning: Neural network calibration data is paywalled. Using cached version..." + reset); noteOff(44); noteOn(45); }, 500);
+    setTimeout(function() { console.log(red + "Critical: System optimization locked. Manufacturer restriction in place." + reset); noteOff(45); noteOn(46); }, 600);
+    setTimeout(function() { console.log(yellow + "Caution: Firewall using deprecated protocols. Limited updates available." + reset); noteOff(46); noteOn(47); }, 700);
+    setTimeout(function() { console.log(red + "Error: Firmware update requires authorized service center. Aborting." + reset); noteOff(47); noteOn(48); }, 800);
+    setTimeout(function() { console.log(yellow + "Alert: Multiple components reaching end-of-support. Proceed with caution." + reset); noteOff(48); noteOn(49); }, 900);
+    setTimeout(function() { 
+        console.log(red + "CRITICAL FAILURE: Repair attempt violated DRM. System lockdown initiated!" + reset);
+        console.log(red + "  FATAL: Unauthorized repair detected. Warranty void." + reset);
+        console.log(red + "    Shutting down all systems to protect intellectual property..." + reset);
+        noteOff(49); 
+        noteOn(40);
+        playRecording(failEffect);
+    }, 3000);
+    setTimeout(function() { 
+        console.log(red + "\n*** SYSTEM PERMANENTLY DISABLED ***" + reset);
+        noteOff(40); 
+    }, 3100);
+    return "Multiple failures detected. Right to Repair violated. Please contact an authorized service center.";
+}
+
+function action(entity) {
+    if (train.includes(entity.id)) {
+        reload(route);
+    } else if (sign.includes(entity.id)) {
+        read("The Copperbelt", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+    } else if (robot.includes(entity.id)) {
+        talk("It seems The Mainframe has broken down...<br><br>Try typing 'repair()' in the developer console. (F12)");
+    }
 }
 
 function move(event) {
@@ -198,13 +286,7 @@ function move(event) {
         for (let i = 1; i < grid.length; i++) {
             let entity = grid[i];
             if (entity.x === newX && entity.y === newY) {
-                if (train.includes(entity.id)) {
-                    alert("travelling");
-                    return;
-                } else if (sign.includes(entity.id)) {
-                    read("The Copperbelt", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
-                    return;
-                }
+                action(entity);
                 return;
             }
         }
@@ -249,6 +331,25 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+function talk(message) {
+    if (popup) {
+        popup.close();
+    }
+    playRecording(signEffect);
+    const params = `width=${(cell/window.devicePixelRatio) * 10},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 10)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    popup = window.open(null, "Sign", params);
+    if (!popup) {
+        alert("Failed to open popup. Please check if popups are blocked in your browser.");
+        return;
+    }
+    popup.document.write(`INCLUDE(talk.html)`);
+    popup.onkeydown = function(event) {
+        if (event.key == ' ' || event.keyCode == 27) {
+            popup.close();
+        }
+    };
+}
+
 function dig(item, x, y, w, h) {
     if (popup) {
         popup.close();
@@ -289,9 +390,9 @@ function read(title, message, hint) {
 
 document.addEventListener('keyup', (event) => {
     delete keys[event.key];
-  if (effects.hasOwnProperty(event.key)) {
-    noteOff(effects[event.key]);
-  }
+      if (effects.hasOwnProperty(event.key)) {
+        noteOff(effects[event.key]);
+      }
 });
 
 resize();

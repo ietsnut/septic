@@ -9,6 +9,8 @@ let recordedNotes = [];
 let recordStartTime;
 let masterGainNode;
 
+getOrCreateContext();
+
 function getOrCreateContext() {
   if (!context) {
     context = new (window.AudioContext || window.webkitAudioContext)();
