@@ -133,7 +133,7 @@ function load(map) {
     }
 }
 
-load(map1);
+load(map2);
 
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
@@ -222,9 +222,11 @@ function move() {
             player.ty = 0;
             requestAnimationFrame(draw);
             moving = false;
-        }, 200);
+        }, 200); 
     }
 }
+
+INCLUDE(music.js)
 
 document.addEventListener('keydown', (event) => {
     if (player == undefined) { 
@@ -235,6 +237,7 @@ document.addEventListener('keydown', (event) => {
     keys[event.key] = false;
     if (event.key == ' ') {
         dig("Electroplate", 0, 21, 13, 7);
+        startPlaying();
     }
 });
 

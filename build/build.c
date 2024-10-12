@@ -276,6 +276,63 @@ char* base64_encode(const unsigned char* data, size_t input_length, size_t* outp
 
 char* process_include(const char* filename);
 
+char* process_midi(const char* filename) {
+    DEBUG_PRINT("Processing MIDI for file: %s\n", filename);
+    char full_path[512];
+    snprintf(full_path, sizeof(full_path), "%s%s", SOURCE, filename);
+    
+    FILE* file = fopen(full_path, "rb");
+    if (!file) {
+        DEBUG_PRINT("Failed to open file: %s\n", full_path);
+        return NULL;
+    }
+    
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    
+    unsigned char* content = malloc(file_size);
+    if (!content) {
+        DEBUG_PRINT("Failed to allocate memory for file content\n", "");
+        fclose(file);
+        return NULL;
+    }
+    
+    size_t read_size = fread(content, 1, file_size, file);
+    fclose(file);
+    
+    if (read_size != file_size) {
+        DEBUG_PRINT("Failed to read entire file. Read %zu bytes out of %ld\n", read_size, file_size);
+        free(content);
+        return NULL;
+    }
+    
+    DEBUG_PRINT("MIDI file size: %ld\n", file_size);
+    
+    size_t output_length;
+    char* base64 = base64_encode(content, file_size, &output_length);
+    free(content);
+    
+    if (!base64) {
+        DEBUG_PRINT("Failed to encode file to base64\n", "");
+        return NULL;
+    }
+    
+    DEBUG_PRINT("MIDI Base64 encoded length: %zu\n", output_length);
+
+    // Prepend the data URL scheme
+    char* result = malloc(output_length + 30);
+    if (!result) {
+        DEBUG_PRINT("Failed to allocate memory for result\n", "");
+        free(base64);
+        return NULL;
+    }
+    sprintf(result, "data:audio/midi;base64,%s", base64);
+    free(base64);
+
+    return result;
+}
+
 char* process_base64(const char* filename) {
     char full_path[512];
     snprintf(full_path, sizeof(full_path), "%s%s", SOURCE, filename);
@@ -745,6 +802,13 @@ char* preprocess_content(const char* content, const char* current_file) {
                     DEBUG_PRINT("Processing INCLUDE with WIDTH for file: '%s'\n", filename);
                     int width = get_image_width(filename);
                     output += sprintf(output, "%d", width);
+                } else if (strcmp(token, "MIDI") == 0) {
+                    DEBUG_PRINT("Processing INCLUDE with MIDI for file: '%s'\n", filename);
+                    char* midi_content = process_midi(filename);
+                    if (midi_content) {
+                        output += sprintf(output, "%s", midi_content);
+                        free(midi_content);
+                    }
                 } else if (strcmp(token, "FRAME") == 0) {
                     int x, y;
                     sscanf(strtok(NULL, ","), "%d", &x);
