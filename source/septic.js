@@ -117,6 +117,7 @@ let player;
 resize();
 
 const map1 = [INCLUDE(map1.csv)];
+const map2 = [INCLUDE(map2.csv)];
 
 function load(map) {
     grid = [];
