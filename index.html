@@ -343,7 +343,7 @@ function resize() {
     requestAnimationFrame(draw);
 }
 
-function move() {
+function move(event) {
     let moveX = 0;
     let moveY = 0;
     if (keys['w']) {
@@ -385,6 +385,7 @@ function move() {
         player.y = newY;
         requestAnimationFrame(draw);
         if (moving) return;
+        if (effects.hasOwnProperty(event.key)) {noteOn(effects[event.key]);}
         player.ty = player.ty === 1 ? 2 : 1;
         requestAnimationFrame(draw);
         moving = true;
@@ -400,40 +401,41 @@ function move() {
     }
 }
 
+const failEffect = [{"type":"noteOn","midiNote":69,"time":0.2,"velocity":1},{"type":"noteOn","midiNote":65,"time":0.44,"velocity":1},{"type":"noteOff","midiNote":69,"time":0.4613333333333333},{"type":"noteOn","midiNote":69,"time":0.6906666666666667,"velocity":1},{"type":"noteOff","midiNote":65,"time":0.7413333333333333},{"type":"noteOff","midiNote":69,"time":0.9493333333333334},{"type":"noteOn","midiNote":65,"time":0.96,"velocity":1},{"type":"noteOff","midiNote":65,"time":1.2106666666666666},{"type":"noteOn","midiNote":67,"time":1.2213333333333334,"velocity":1},{"type":"noteOn","midiNote":62,"time":1.2293333333333334,"velocity":1},{"type":"noteOn","midiNote":56,"time":1.2293333333333334,"velocity":1},{"type":"noteOff","midiNote":67,"time":2.1413333333333333},{"type":"noteOff","midiNote":62,"time":2.1413333333333333},{"type":"noteOff","midiNote":56,"time":2.1413333333333333}]
+const succEffect = [{"type":"noteOn","midiNote":71,"time":0.4079999999999999,"velocity":1},{"type":"noteOn","midiNote":72,"time":0.52,"velocity":1},{"type":"noteOff","midiNote":71,"time":0.5386666666666668},{"type":"noteOff","midiNote":72,"time":0.6400000000000001},{"type":"noteOn","midiNote":71,"time":0.658666666666667,"velocity":1},{"type":"noteOff","midiNote":71,"time":0.7893333333333334},{"type":"noteOn","midiNote":72,"time":0.7893333333333334,"velocity":1},{"type":"noteOff","midiNote":72,"time":0.8986666666666667},{"type":"noteOn","midiNote":71,"time":0.9199999999999999,"velocity":1},{"type":"noteOff","midiNote":71,"time":1.0186666666666668},{"type":"noteOn","midiNote":65,"time":1.048,"velocity":1},{"type":"noteOn","midiNote":72,"time":1.0586666666666669,"velocity":1},{"type":"noteOff","midiNote":65,"time":2.0186666666666664},{"type":"noteOff","midiNote":72,"time":2.04}]
+const signEffect = [{"type":"noteOn","midiNote":64,"time":0.18133333333333335,"velocity":1},{"type":"noteOn","midiNote":71,"time":0.18933333333333333,"velocity":1},{"type":"noteOn","midiNote":67,"time":0.2,"velocity":1},{"type":"noteOff","midiNote":67,"time":0.25066666666666665},{"type":"noteOff","midiNote":64,"time":0.2693333333333333},{"type":"noteOff","midiNote":71,"time":0.28},{"type":"noteOn","midiNote":65,"time":0.44,"velocity":1},{"type":"noteOn","midiNote":60,"time":0.44,"velocity":1},{"type":"noteOff","midiNote":65,"time":0.5706666666666667},{"type":"noteOff","midiNote":60,"time":0.5893333333333334}];
+
 let context;
 let activeOscillators = {};
 let isRecording = false;
-let recordedNotes = [{"type":"noteOn","midiNote":60,"time":0.84},{"type":"noteOn","midiNote":72,"time":1.2693333333333334},{"type":"noteOff","midiNote":72,"time":1.68},{"type":"noteOn","midiNote":71,"time":1.72},{"type":"noteOff","midiNote":71,"time":2.1493333333333333},{"type":"noteOn","midiNote":69,"time":2.1493333333333333},{"type":"noteOff","midiNote":60,"time":2.2906666666666666},{"type":"noteOff","midiNote":69,"time":2.6},{"type":"noteOn","midiNote":71,"time":2.6693333333333333},{"type":"noteOn","midiNote":64,"time":2.7093333333333334},{"type":"noteOff","midiNote":71,"time":3.5813333333333333},{"type":"noteOn","midiNote":69,"time":3.6},{"type":"noteOff","midiNote":64,"time":4.021333333333334},{"type":"noteOff","midiNote":69,"time":4.050666666666666},{"type":"noteOn","midiNote":62,"time":4.08},{"type":"noteOn","midiNote":67,"time":4.101333333333334},{"type":"noteOff","midiNote":67,"time":5.04},{"type":"noteOn","midiNote":69,"time":5.069333333333334},{"type":"noteOff","midiNote":69,"time":5.530666666666667},{"type":"noteOff","midiNote":62,"time":5.549333333333333},{"type":"noteOn","midiNote":67,"time":5.581333333333333},{"type":"noteOn","midiNote":64,"time":5.581333333333333},{"type":"noteOff","midiNote":67,"time":7.050666666666666},{"type":"noteOff","midiNote":64,"time":7.1706666666666665},{"type":"noteOn","midiNote":65,"time":7.301333333333333},{"type":"noteOn","midiNote":67,"time":7.789333333333333},{"type":"noteOff","midiNote":67,"time":8.250666666666667},{"type":"noteOn","midiNote":69,"time":8.250666666666667},{"type":"noteOff","midiNote":65,"time":8.530666666666667},{"type":"noteOff","midiNote":69,"time":8.589333333333334},{"type":"noteOn","midiNote":71,"time":8.76},{"type":"noteOff","midiNote":71,"time":9.730666666666666},{"type":"noteOn","midiNote":69,"time":9.730666666666666},{"type":"noteOff","midiNote":69,"time":9.941333333333333},{"type":"noteOn","midiNote":62,"time":10.181333333333333},{"type":"noteOn","midiNote":67,"time":10.210666666666667},{"type":"noteOff","midiNote":67,"time":11.101333333333333},{"type":"noteOn","midiNote":69,"time":11.170666666666667},{"type":"noteOff","midiNote":69,"time":11.469333333333333},{"type":"noteOff","midiNote":62,"time":11.501333333333333},{"type":"noteOn","midiNote":64,"time":11.64},{"type":"noteOn","midiNote":67,"time":11.650666666666666},{"type":"noteOff","midiNote":64,"time":13.141333333333334},{"type":"noteOff","midiNote":67,"time":13.181333333333333},{"type":"noteOn","midiNote":72,"time":13.229333333333333},{"type":"noteOff","midiNote":72,"time":13.621333333333334},{"type":"noteOn","midiNote":71,"time":13.68},{"type":"noteOn","midiNote":69,"time":14.101333333333333},{"type":"noteOff","midiNote":71,"time":14.109333333333334},{"type":"noteOff","midiNote":69,"time":14.549333333333333},{"type":"noteOn","midiNote":71,"time":14.581333333333333},{"type":"noteOn","midiNote":64,"time":14.610666666666667},{"type":"noteOff","midiNote":71,"time":15.48},{"type":"noteOn","midiNote":69,"time":15.48},{"type":"noteOff","midiNote":64,"time":15.541333333333334},{"type":"noteOff","midiNote":69,"time":15.941333333333333},{"type":"noteOn","midiNote":67,"time":15.970666666666666},{"type":"noteOn","midiNote":60,"time":15.989333333333333},{"type":"noteOn","midiNote":69,"time":16.890666666666668},{"type":"noteOff","midiNote":67,"time":16.901333333333334},{"type":"noteOff","midiNote":60,"time":17.301333333333332},{"type":"noteOff","midiNote":69,"time":17.309333333333335},{"type":"noteOn","midiNote":62,"time":17.349333333333334},{"type":"noteOn","midiNote":67,"time":17.381333333333334},{"type":"noteOff","midiNote":67,"time":18.301333333333332},{"type":"noteOn","midiNote":69,"time":18.301333333333332},{"type":"noteOff","midiNote":69,"time":18.78933333333333},{"type":"noteOff","midiNote":62,"time":18.8},{"type":"noteOn","midiNote":64,"time":18.82133333333333},{"type":"noteOn","midiNote":67,"time":18.82133333333333},{"type":"noteOn","midiNote":71,"time":20.229333333333333},{"type":"noteOff","midiNote":67,"time":20.229333333333333},{"type":"noteOn","midiNote":69,"time":21.149333333333335},{"type":"noteOff","midiNote":64,"time":21.170666666666666},{"type":"noteOff","midiNote":71,"time":21.189333333333334},{"type":"noteOn","midiNote":65,"time":21.2},{"type":"noteOff","midiNote":69,"time":21.629333333333335},{"type":"noteOn","midiNote":72,"time":21.650666666666666},{"type":"noteOff","midiNote":72,"time":22.610666666666667},{"type":"noteOn","midiNote":71,"time":22.610666666666667},{"type":"noteOff","midiNote":65,"time":23.08},{"type":"noteOn","midiNote":60,"time":23.090666666666667},{"type":"noteOn","midiNote":69,"time":23.101333333333333},{"type":"noteOff","midiNote":71,"time":23.12},{"type":"noteOff","midiNote":69,"time":23.530666666666665},{"type":"noteOn","midiNote":67,"time":23.56},{"type":"noteOn","midiNote":69,"time":23.981333333333332},{"type":"noteOff","midiNote":67,"time":23.989333333333335},{"type":"noteOff","midiNote":69,"time":24.389333333333333},{"type":"noteOff","midiNote":60,"time":24.410666666666668},{"type":"noteOn","midiNote":62,"time":24.429333333333332},{"type":"noteOn","midiNote":67,"time":24.461333333333332},{"type":"noteOff","midiNote":67,"time":25.461333333333332},{"type":"noteOff","midiNote":62,"time":25.461333333333332}];
+let recordedNotes = [];
 let recordStartTime;
+let masterGainNode;
 
 function getOrCreateContext() {
   if (!context) {
     context = new (window.AudioContext || window.webkitAudioContext)();
+    masterGainNode = context.createGain();
+    masterGainNode.connect(context.destination);
+    masterGainNode.gain.setValueAtTime(0.1, context.currentTime);
   }
 }
 
-function noteOn(midiNote, time = context.currentTime) {
-  getOrCreateContext();
+function noteOn(midiNote, time = context.currentTime, velocity = 1) {
   if (activeOscillators[midiNote]) {
-    return; // Note is already playing
+    return;
   }
-  
   const oscillator = context.createOscillator();
   const gainNode = context.createGain();
-  
   const freq = Math.pow(2, (midiNote-69)/12)*440;
   oscillator.frequency.setValueAtTime(freq, time);
-  
   oscillator.connect(gainNode);
-  gainNode.connect(context.destination);
-  
+  gainNode.connect(masterGainNode);
   oscillator.start(time);
-  gainNode.gain.setTargetAtTime(1, time, 0.01);
-  
+  gainNode.gain.setTargetAtTime(velocity, time, 0.01);
   activeOscillators[midiNote] = { oscillator, gainNode };
-
   if (isRecording) {
-    recordedNotes.push({ type: 'noteOn', midiNote, time: time - recordStartTime });
+    recordedNotes.push({ type: 'noteOn', midiNote, time: time - recordStartTime, velocity });
   }
 }
 
@@ -443,7 +445,6 @@ function noteOff(midiNote, time = context.currentTime) {
     gainNode.gain.setTargetAtTime(0, time, 0.1);
     oscillator.stop(time + 0.5); // Stop after fade out
     delete activeOscillators[midiNote];
-
     if (isRecording) {
       recordedNotes.push({ type: 'noteOff', midiNote, time: time - recordStartTime });
     }
@@ -461,21 +462,16 @@ const emulatedKeys = {
   i: 72, // C5
 };
 
-var started = false;
-
 document.addEventListener('keydown', function(e) {
-  if (!started) {
-    getOrCreateContext();
-    started = true;
-  }
-  if (emulatedKeys.hasOwnProperty(e.key)) {
+  getOrCreateContext();
+  if (emulatedKeys.hasOwnProperty(e.key) && isRecording) {
     noteOn(emulatedKeys[e.key]);
   } else if (e.key === 'z') {
     startRecording();
   } else if (e.key === 'x') {
     stopRecording();
   } else if (e.key === 'c') {
-    playRecording();
+    playRecording(recordedNotes);
   }
 });
 
@@ -498,35 +494,39 @@ function stopRecording() {
   console.log(JSON.stringify(recordedNotes));
 }
 
-function playRecording() {
+function playRecording(rec) {
+  getOrCreateContext();
   const startTime = context.currentTime;
-  recordedNotes.forEach(note => {
+  rec.forEach(note => {
     if (note.type === 'noteOn') {
-      noteOn(note.midiNote, startTime + note.time);
+      noteOn(note.midiNote, startTime + note.time, note.velocity);
     } else if (note.type === 'noteOff') {
       noteOff(note.midiNote, startTime + note.time);
     }
   });
 }
 
-// Function to load a recording
 function loadRecording(recordingData) {
   recordedNotes = JSON.parse(recordingData);
   console.log("Recording loaded");
 }
 
-
+const effects = {
+    d: 50,
+    s: 52,
+    a: 54,
+    w: 56
+};
 
 document.addEventListener('keydown', (event) => {
     if (player == undefined) { 
         return;
     }
     keys[event.key] = true;
-    move();
+    move(event);
     keys[event.key] = false;
     if (event.key == ' ') {
         dig("Electroplate", 0, 21, 13, 7);
-        startPlaying();
     }
 });
 
@@ -534,6 +534,7 @@ function dig(item, x, y, w, h) {
     if (popup) {
         popup.close();
     }
+    playRecording(succEffect);
     const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 20},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 20)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Excavation", params);
     if (!popup) {
@@ -617,6 +618,7 @@ function read(title, message, hint) {
     if (popup) {
         popup.close();
     }
+    playRecording(signEffect);
     const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Sign", params);
     if (!popup) {
@@ -701,6 +703,9 @@ function read(title, message, hint) {
 
 document.addEventListener('keyup', (event) => {
     delete keys[event.key];
+  if (effects.hasOwnProperty(event.key)) {
+    noteOff(effects[event.key]);
+  }
 });
 
 resize();
