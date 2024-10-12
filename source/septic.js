@@ -118,6 +118,7 @@ resize();
 
 const map1 = [INCLUDE(map1.csv)];
 const map2 = [INCLUDE(map2.csv)];
+const map3 = [INCLUDE(map3.csv)];
 
 function load(map) {
     grid = [];
@@ -133,7 +134,7 @@ function load(map) {
     }
 }
 
-load(map2);
+load(map3);
 
 gl.enableVertexAttribArray(0);
 gl.enableVertexAttribArray(1);
