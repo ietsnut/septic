@@ -1,6 +1,6 @@
 # septic.js
 
-A C preprocessor and webgl engine to make one index.html from multiple sources.
+A C preprocessor and webgl engine to make one index.html from multiple sources (and compress them).
 The engine is a 1-bit tilemap/grid top-down. Example in source/ and on the website.
 
 The following macros are exposed to use in html/css/js/... files:
