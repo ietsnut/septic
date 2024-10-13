@@ -13,7 +13,7 @@
                 html, body {
                     background-color: black;
                     color: white;
-                    font-size: ${cell/2}px;
+                    font-size: ${(cell/window.devicePixelRatio)/2}px;
                     min-height: 100%;
                     height: 100vh;
                     overflow: hidden;
@@ -22,7 +22,7 @@
                 }
                 body {
                     border: ${cell}px solid transparent;
-                    border-image: url('INCLUDE(septic.png,FRAME,1wdw,3)') 16 round;    
+                    border-image: url('INCLUDE(septic.png,FRAME,1,3)') 16 round;    
                 }
                 img {
                     width: ${cell}px;

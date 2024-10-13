@@ -182,6 +182,11 @@ var popup;
 
 window.onresize = resize;
 window.fullscreenchange = resize;
+window.onfocus = function() {
+    if (popup) {
+        popup.close();
+    }
+}
 
 window.onclick = function(event) {
     if (map == route) {
@@ -207,11 +212,11 @@ function resize() {
     canvas.height = window.innerHeight * window.devicePixelRatio;
     gl.uniform2f(scale, canvas.width, canvas.height);
     if (window.innerWidth > window.innerHeight) {
-        cell = (window.innerHeight / (rows + 2)) * window.devicePixelRatio;
+        cell = (window.innerHeight / (rows + 2));
     } else {
-        cell = (window.innerWidth / (cols + 2))* window.devicePixelRatio;
+        cell = (window.innerWidth / (cols + 2));
     }
-    gl.uniform1f(tilesize, cell);
+    gl.uniform1f(tilesize, cell * window.devicePixelRatio);
     gl.viewport(0, 0, canvas.width, canvas.height);
     requestAnimationFrame(draw);
 }
@@ -255,13 +260,23 @@ function action(entity) {
     if (train.includes(entity.id)) {
         reload(route);
     } else if (sign.includes(entity.id)) {
-        read("The Copperbelt", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+        if (map == map0) {
+            read("The Mainframe", "An ancient piece of technology (circa 2024).", "Made of capacitors, batteries and wires.");
+        } else if (map == map1) {
+            read("The Cobaltfield", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+        } else if (map == map2) {
+            read("The Copperbelt", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+        } else if (map == map3) {
+            read("The Coltanmine", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+        }
+        
     } else if (robot.includes(entity.id)) {
         talk("It seems The Mainframe has broken down...<br><br>Try typing 'repair()' in the developer console. (F12)");
     }
 }
 
 function move(event) {
+    if (map == route) return;
     let moveX = 0;
     let moveY = 0;
     if (keys['w']) {
@@ -297,7 +312,7 @@ function move(event) {
         player.y = newY;
         requestAnimationFrame(draw);
         if (moving) return;
-        if (effects.hasOwnProperty(event.key)) {noteOn(effects[event.key]);}
+        noteOn(50);
         player.ty = player.ty === 1 ? 2 : 1;
         requestAnimationFrame(draw);
         moving = true;
@@ -315,13 +330,6 @@ function move(event) {
 
 INCLUDE(music.js)
 
-const effects = {
-    d: 50,
-    s: 52,
-    a: 54,
-    w: 56
-};
-
 document.addEventListener('keydown', (event) => {
     getOrCreateContext();
     if (player == undefined) { 
@@ -335,62 +343,59 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-function talk(message) {
+function interface(effect, width, height) {
     if (popup) {
         popup.close();
     }
-    playRecording(talkEffect);
-    const params = `width=${(cell/window.devicePixelRatio) * 10},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 10)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
+    noteOff(50);
+    playRecording(effect);
+    const params = `width=${(cell) * width},height=${(cell) * height},left=${window.screenX + ((window.innerWidth - (cell) * width)/2)},top=${window.screenY + ((window.innerHeight - (cell) * height)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
     popup = window.open(null, "Sign", params);
     if (!popup) {
         alert("Failed to open popup. Please check if popups are blocked in your browser.");
         return;
     }
+}
+
+function talk(message) {
+    interface(talkEffect, 10, 10);
     popup.document.write(`INCLUDE(talk.html)`);
     popup.onkeydown = function(event) {
+        popup.close();
+    };
+    popup.onclick = function(event) {
         popup.close();
     };
 }
 
 function dig(item, x, y, w, h) {
-    if (popup) {
-        popup.close();
-    }
-    playRecording(succEffect);
-    const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 20},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 20)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
-    popup = window.open(null, "Excavation", params);
-    if (!popup) {
-        alert("Failed to open popup. Please check if popups are blocked in your browser.");
-        return;
-    }
+    interface(succEffect, 20, 20);
     popup.document.write(`INCLUDE(excavation.html)`);
     popup.onkeydown = function(event) {
+        popup.close();
+    };
+    popup.onclick = function(event) {
         popup.close();
     };
 }
 
 function read(title, message, hint) {
-    if (popup) {
-        popup.close();
-    }
-    playRecording(signEffect);
-    const params = `width=${(cell/window.devicePixelRatio) * 20},height=${(cell/window.devicePixelRatio) * 10},left=${window.screenX + ((window.innerWidth - (cell/window.devicePixelRatio) * 20)/2)},top=${window.screenY + ((window.innerHeight - (cell/window.devicePixelRatio) * 10)/2)},resizable=no,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,directories=no`;
-    popup = window.open(null, "Sign", params);
-    if (!popup) {
-        alert("Failed to open popup. Please check if popups are blocked in your browser.");
-        return;
-    }
+    interface(signEffect, 20, 10);
     popup.document.write(`INCLUDE(sign.html)`);
     popup.onkeydown = function(event) {
+        popup.close();
+    };
+    popup.onclick = function(event) {
         popup.close();
     };
 }
 
 document.addEventListener('keyup', (event) => {
     delete keys[event.key];
-      if (effects.hasOwnProperty(event.key)) {
-        noteOff(effects[event.key]);
-      }
+    if (context) {
+        noteOff(50);
+    }
+    
 });
 
 resize();
