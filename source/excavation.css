@@ -13,7 +13,7 @@
                 html, body {
                     background-color: black;
                     color: white;
-                    font-size: ${(cell/window.devicePixelRatio)/2}px;
+                    font-size: ${cell/2}px;
                     min-height: 100%;
                     height: 100vh;
                     overflow: hidden;
@@ -47,4 +47,11 @@
                 }
                 ::-webkit-scrollbar-button {
                   display: none;
+                }
+                p {
+                    padding: 0 ${cell}px;
+                }
+                .item {
+                    width: ${cell*5}px;
+                    padding: ${cell*3}px 0;
                 }

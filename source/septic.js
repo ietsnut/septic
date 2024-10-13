@@ -110,6 +110,7 @@ let cols    = 24;
 let rows    = 24;  
 
 let player;
+let map;
 
 resize();
 
@@ -120,7 +121,23 @@ const map3 = [INCLUDE(map3.csv)];
 
 const route = [INCLUDE(route.csv)];
 
-var map = map0;
+if (localStorage.getItem("map") != null) {
+    var storedMap = parseInt(localStorage.getItem("map"));
+    if (storedMap == 0) {
+        map = map0;
+    } else if (storedMap == 1) {
+        map = map1;
+    } else if (storedMap == 2) {
+        map = map2;
+    } else if (storedMap == 3) {
+        map = map3;
+    } else if (storedMap == 4) {
+        map = route;
+    }
+} else {
+    map = map0;
+}
+
 load();
 
 function load() {
@@ -135,28 +152,45 @@ function load() {
             grid.push(entity);
         }
     }
-}
-
-function reload(target) {
-    map = target;
-    grid = [];
+    if (map == map0) {
+        localStorage.setItem("map", 0);
+    } else if (map == map1) {
+        localStorage.setItem("map", 1);
+    } else if (map == map2) {
+        localStorage.setItem("map", 2);
+    } else if (map == map3) {
+        localStorage.setItem("map", 3);
+    } else if (map == route) {
+        localStorage.setItem("map", 4);
+    }
+    if (player != null && localStorage.getItem("playerX") != null && localStorage.getItem("playerY") != null) {
+        player.x = parseInt(localStorage.getItem("playerX"));
+        player.y = parseInt(localStorage.getItem("playerY"));
+    }
     document.getElementById("b0").style.display = 'none';
     document.getElementById("b1").style.display = 'none';
     document.getElementById("b2").style.display = 'none';
     document.getElementById("b3").style.display = 'none';
     document.getElementById("b4").style.display = 'none';
-    if (target == route) {
+    if (map == route) {
         document.getElementById("b4").style.display = 'block';
-    } else if (target == map0) {
+    } else if (map == map0) {
         document.getElementById("b0").style.display = 'block';
-    } else if (target == map1) {
+    } else if (map == map1) {
         document.getElementById("b1").style.display = 'block';
-    } else if (target == map2) {
+    } else if (map == map2) {
         document.getElementById("b2").style.display = 'block';
-    } else if (target == map3) {
+    } else if (map == map3) {
         document.getElementById("b3").style.display = 'block';
     }
-    load(map);
+}
+
+function reload(target) {
+    map = target;
+    grid = [];
+    localStorage.removeItem("playerX");
+    localStorage.removeItem("playerY");
+    load();
 }
 
 gl.enableVertexAttribArray(0);
@@ -258,9 +292,18 @@ const train = [375,376,377,343,344,345,349,350,351,381,382,383];
 const sign  = [160];
 const robot = [10];
 const castle = [259];
+const fnote = [331];
+const boner = [170];
+const crystal = [370];
+const diamond = [336];
+const doors = [259, 260, 261];
+const tools = [333, 371];
+
+var capacitor = localStorage.getItem("capacitor") != null;
+var wire = localStorage.getItem("wire") != null;
+var battery = localStorage.getItem("battery") != null;
 
 function action(entity) {
-    console.log(entity);
     if (train.includes(entity.id)) {
         reload(route);
     } else if (sign.includes(entity.id)) {
@@ -274,14 +317,36 @@ function action(entity) {
             read("The Cobaltfield", "One of the richest deposits of cobalt.", "Cobalt is commonly used in batteries.");
         }
     } else if (robot.includes(entity.id)) {
+        if (capacitor && wire && battery) {
+            talk(loseEffect, "Incredible! You found all the components! Bad news is, the Mainframe seems to have been covered with Indestructible Epoxy, we will not be able to fix it… Good effort though!");
+            return;
+        }
         if (!talkedToRobot) {
-            talk("'Grand System needs maintenance! Visit the mines of old and bring back cobalt, copper and coltan. We have to keep the Mainframe alive!'");
+            talk(talkEffect, "'Grand System needs maintenance! Visit the mines of old by train and bring back cobalt, copper and coltan.'<br><br>* You can dig using SPACEBAR.");
         } else {
-            talk("It seems The Mainframe has broken down...<br><br>Try typing 'repair()' in the developer console. (F12)");
+            talk(talkEffect, "It seems The Mainframe has broken down...<br><br>Try typing 'repair()' in the developer console. (F12)");
         }
         talkedToRobot = !talkedToRobot;
     } else if (castle.includes(entity.id) && map == map0) {
-        thought("Legend says great rulers used to reside in these halls, ever watching the Mainframe shine and shift and buzz. I wonder why they did that…");
+        thought("Legend says great rulers used to reside in these halls, ever watching the Mainframe shine and shift and buzz. I wonder why they did that…", 15, 6.5);
+    } else if (boner.includes(entity.id)) {
+        thought("Is it human?", 6, 3.5);
+    } else if (crystal.includes(entity.id)) {
+        thought("It burns when I touch it!", 7, 4);
+    } else if (diamond.includes(entity.id)) {
+        thought("Looks very valuable to me!", 7, 4);
+    } else if (doors.includes(entity.id)) {
+        thought("Another abandoned place...", 7, 4);
+    } else if (tools.includes(entity.id)) {
+        thought("It was just left behind...", 7, 4);
+    } else if (fnote.includes(entity.id)) {
+        if (map == map1) {
+            notep("'There is no more ore pure enough in these parts, I’m moving the kids east so we can find some work there, noone buys what we mine here anymore.'");
+        } else if (map == map2) {
+            notep("24/09/2019 <br><br>'I started coughing this morning.<br>I’m going down 30m deep again today. <br>Didn’t sleep well.'");
+        } else if (map == map3) {
+            notep("The ore is so pure here, if I just keep working one day I’ll earn enough to get out of this place. One day…");
+        }
     }
 }
 
@@ -320,6 +385,8 @@ function move(event) {
         }
         player.x = newX;
         player.y = newY;
+        localStorage.setItem("playerX", player.x);
+        localStorage.setItem("playerY", player.y);
         requestAnimationFrame(draw);
         if (moving) return;
         noteOn(50);
@@ -340,6 +407,8 @@ function move(event) {
 
 INCLUDE(music.js)
 
+
+
 document.addEventListener('keydown', (event) => {
     getOrCreateContext();
     if (player == undefined) { 
@@ -349,8 +418,30 @@ document.addEventListener('keydown', (event) => {
     move(event);
     keys[event.key.toLowerCase()] = false;
     if (event.key == ' ') {
-        dig("Electroplate", 0, 21, 13, 7);
+        if (map != route && map != map0) {
+            var rand = Math.random();
+            if (rand < 0.4) {
+                dig("Dirt", "dirt", "Some dirt...<br>Just keep on digging...");
+            } else if (rand < 0.6) {
+                dig("Skull", "skull", "Victim of a tunnel collapse...<br>Just keep on digging...");
+            } else if (rand < 0.8) {
+                dig("Crowbar", "bar", "Armed with a simple crowbar to exploit a mineral vein, in extremely dangerous conditions… These people depended on this production directly or indirectly.<br>Just keep on digging...");
+            } else if (map == map1) {
+                dig("Electrolytic Capacitor", "cap", "1 of 3 components of The Mainframe<br><br>Visit the other mines to find the rest, or go back to the robot when all 3 are found.");
+                localStorage.setItem("capacitor", true);
+                capacitor = true;
+            } else if (map == map2) {
+                dig("Copper Wire", "wire", "1 of 3 components of The Mainframe<br><br>Visit the other mines to find the rest, or go back to the robot when all 3 are found.");
+                localStorage.setItem("wire", true);
+                wire = true;
+            } else if (map == map3) {
+                dig("Lithium Battery", "bat", "1 of 3 components of The Mainframe<br><br>Visit the other mines to find the rest, or go back to the robot when all 3 are found.");
+                localStorage.setItem("battery", true);
+                battery = true;
+            }
+        }
     }
+
 });
 
 function interface(effect, width, height) {
@@ -367,8 +458,19 @@ function interface(effect, width, height) {
     }
 }
 
-function thought(message) {
-    interface(thinkEffect, 15, 7.5);
+function notep(message) {
+    interface(thinkEffect, 15, 10);
+    popup.document.write(`INCLUDE(note.html)`);
+    popup.onkeydown = function(event) {
+        popup.close();
+    };
+    popup.onclick = function(event) {
+        popup.close();
+    };
+}
+
+function thought(message, w, h) {
+    interface(thinkEffect, w, h);
     popup.document.write(`INCLUDE(thought.html)`);
     popup.onkeydown = function(event) {
         popup.close();
@@ -378,8 +480,8 @@ function thought(message) {
     };
 }
 
-function talk(message) {
-    interface(talkEffect, 10, 10);
+function talk(effect, message) {
+    interface(effect, 10, 10);
     popup.document.write(`INCLUDE(talk.html)`);
     popup.onkeydown = function(event) {
         popup.close();
@@ -389,8 +491,18 @@ function talk(message) {
     };
 }
 
-function dig(item, x, y, w, h) {
-    interface(succEffect, 20, 20);
+function dig(name, id, hint) {
+    let skull = id == 'skull' ? 'block' : 'none';
+    let bat = id == 'bat' ? 'block' : 'none';
+    let wire = id == 'wire' ? 'block' : 'none';
+    let cap = id == 'cap' ? 'block' : 'none';
+    let bar = id == 'bar' ? 'block' : 'none';
+    let dirt = id == 'dirt' ? 'block' : 'none';
+    if (id == 'skull' || id == "bar" || id == "dirt") {
+        interface(failEffect, 20, 20);
+    } else {
+        interface(succEffect, 20, 20);
+    }
     popup.document.write(`INCLUDE(excavation.html)`);
     popup.onkeydown = function(event) {
         popup.close();

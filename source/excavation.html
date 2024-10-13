@@ -7,11 +7,14 @@
         </head>
         <body>
             <img src='INCLUDE(septic.png,TILE,19,11)'>
-            <p>You found: <u>${item}</u>!</p>
-            <img style="width: ${cell*17}px;" src='INCLUDE(septic.png,TILES,0,21,13,7)'>
-            <p class="hint">Armed with a simple crowbar to exploit a mineral vein, in extremely dangerous conditions…<br><br>
-        One to two million Congolese people depend on this production directly or indirectly.</p>
-        <img src='INCLUDE(septic.png,TILE,19,11)'>
+            <p>You dug up: <u>${name}</u>!</p>
+            <img class="item" style="display: ${dirt};" id="dirt"  src='INCLUDE(septic.png,TILES,21,21,5,4)'>
+            <img class="item" style="display: ${bar};" id="bar"  src='INCLUDE(septic.png,TILES,26,21,5,4)'>
+            <img class="item" style="display: ${skull};" id="skull"  src='INCLUDE(septic.png,TILES,26,17,5,4)'>
+            <img class="item" style="display: ${cap};" id="cap"  src='INCLUDE(septic.png,TILES,11,17,5,4)'>
+            <img class="item" style="display: ${wire};" id="wire" src='INCLUDE(septic.png,TILES,16,17,5,4)'>
+            <img class="item" style="display: ${bat};" id="bat" src='INCLUDE(septic.png,TILES,21,17,5,4)'>
+            <p class="hint">${hint}</p>
         <border></border>
         </body>
         </html>
