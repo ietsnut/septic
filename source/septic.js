@@ -101,10 +101,6 @@ const position  = gl.getUniformLocation(program, "position");
 const flip      = gl.getUniformLocation(program, "flip");
 const gray      = gl.getUniformLocation(program, "gray");
 
-const train = [375,376,377,343,344,345,349,350,351,381,382,383];
-const sign  = [160];
-const robot = [10];
-
 var grid    = [];
 let keys    = {};
 let right   = true;
@@ -256,22 +252,36 @@ const repairs = function() {
 
 window.__defineGetter__("repair", repairs);
 
+var talkedToRobot = false;
+
+const train = [375,376,377,343,344,345,349,350,351,381,382,383];
+const sign  = [160];
+const robot = [10];
+const castle = [259];
+
 function action(entity) {
+    console.log(entity);
     if (train.includes(entity.id)) {
         reload(route);
     } else if (sign.includes(entity.id)) {
         if (map == map0) {
             read("The Mainframe", "An ancient piece of technology (circa 2024).", "Made of capacitors, batteries and wires.");
         } else if (map == map1) {
-            read("The Cobaltfield", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+            read("The Coltanmine", "One of the richest deposits of coltan.", "'Coltan' is short for tantalite, used in capacitors.");
         } else if (map == map2) {
-            read("The Copperbelt", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+            read("The Copperbelt", "One of the richest deposits of copper.", "Copper is great at conducting electricity.");
         } else if (map == map3) {
-            read("The Coltanmine", "One of the richest deposits of copper.", "Copper is commonly used for electric wires.");
+            read("The Cobaltfield", "One of the richest deposits of cobalt.", "Cobalt is commonly used in batteries.");
         }
-        
     } else if (robot.includes(entity.id)) {
-        talk("It seems The Mainframe has broken down...<br><br>Try typing 'repair()' in the developer console. (F12)");
+        if (!talkedToRobot) {
+            talk("'Grand System needs maintenance! Visit the mines of old and bring back cobalt, copper and coltan. We have to keep the Mainframe alive!'");
+        } else {
+            talk("It seems The Mainframe has broken down...<br><br>Try typing 'repair()' in the developer console. (F12)");
+        }
+        talkedToRobot = !talkedToRobot;
+    } else if (castle.includes(entity.id) && map == map0) {
+        thought("Legend says great rulers used to reside in these halls, ever watching the Mainframe shine and shift and buzz. I wonder why they did that…");
     }
 }
 
@@ -279,16 +289,16 @@ function move(event) {
     if (map == route) return;
     let moveX = 0;
     let moveY = 0;
-    if (keys['w']) {
+    if (keys['w'] || keys['arrowup']) {
         moveY += 1;
     }
-    if (keys['s']) {
+    if (keys['s'] || keys['arrowdown']) {
         moveY -= 1;
     }
-    if (keys['a']) {
+    if (keys['a'] || keys['arrowleft']) {
         moveX -= 1;
     }
-    if (keys['d']) {
+    if (keys['d'] || keys['arrowright']) {
         moveX += 1;
     }
     if (moveX !== 0 || moveY !== 0) {
@@ -335,9 +345,9 @@ document.addEventListener('keydown', (event) => {
     if (player == undefined) { 
         return;
     }
-    keys[event.key] = true;
+    keys[event.key.toLowerCase()] = true;
     move(event);
-    keys[event.key] = false;
+    keys[event.key.toLowerCase()] = false;
     if (event.key == ' ') {
         dig("Electroplate", 0, 21, 13, 7);
     }
@@ -355,6 +365,17 @@ function interface(effect, width, height) {
         alert("Failed to open popup. Please check if popups are blocked in your browser.");
         return;
     }
+}
+
+function thought(message) {
+    interface(thinkEffect, 15, 7.5);
+    popup.document.write(`INCLUDE(thought.html)`);
+    popup.onkeydown = function(event) {
+        popup.close();
+    };
+    popup.onclick = function(event) {
+        popup.close();
+    };
 }
 
 function talk(message) {
@@ -391,7 +412,7 @@ function read(title, message, hint) {
 }
 
 document.addEventListener('keyup', (event) => {
-    delete keys[event.key];
+    delete keys[event.key.toLowerCase()];
     if (context) {
         noteOff(50);
     }
