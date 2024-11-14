@@ -108,6 +108,7 @@ let moving  = false;
 let cell    = 48 * window.devicePixelRatio;
 let cols    = 24;
 let rows    = 24;  
+let body    = 0;
 
 let player;
 let map;
@@ -133,6 +134,8 @@ if (localStorage.getItem("map") != null) {
         map = map3;
     } else if (storedMap == 4) {
         map = route;
+    } else if (storedMap == 5) {
+        map = map5;
     }
 } else {
     map = map0;
@@ -142,11 +145,11 @@ load();
 
 function load() {
     grid = [];
-    for (var i = 0; i < map.length; i++) {
+    for (var i = body; i < map.length; i++) {
         var id = map[i];
         if (id !== -1) {
             var entity = new Entity(id, (i % (cols * 2)) - (cols * 2) / 2, (rows * 2) / 2 - (Math.floor(i / (cols * 2))) - 1, ((id % (tm / 16)) * 16) / 16, (Math.floor(id / (tm / 16)) * 16) / 16);
-            if (id == 0) {
+            if (id == body) {
                 player = entity;
             }
             grid.push(entity);
@@ -162,6 +165,8 @@ function load() {
         localStorage.setItem("map", 3);
     } else if (map == route) {
         localStorage.setItem("map", 4);
+    } else if (map == map5) {
+        localStorage.setItem("map", 5);
     }
     if (player != null && localStorage.getItem("playerX") != null && localStorage.getItem("playerY") != null) {
         player.x = parseInt(localStorage.getItem("playerX"));
@@ -201,7 +206,7 @@ function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     for (var i = 0; i < grid.length; i++) {
         let cube = grid[i];
-        gl.uniform1i(flip, cube.id == 0 && right);
+        gl.uniform1i(flip, cube.id == body && right);
         gl.uniform2f(tile, cube.tx, cube.ty);
         gl.uniform2f(position, cube.x, -cube.y);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
@@ -257,6 +262,7 @@ const repairs = function() {
     }
     const red = "\x1b[31m";
     const reset = "\x1b[0m";
+    if (getPart == false){
     console.clear();
     console.log(reset + "Initiating unauthorized repair sequence...\n\n" + reset);
     noteOn(50);
@@ -281,14 +287,28 @@ const repairs = function() {
         console.log(red + "\n*** SYSTEM PERMANENTLY DISABLED ***" + reset);
         noteOff(50); 
     }, 3100);
-    return "Multiple failures detected. Right to Repair violated. Please contact an authorized service center.";
-}
+    repairAttempt = true;
+} else if(getPart = true){
+    console.clear();
+    console.log(reset + "Initiating unauthorized repair sequence...\n\n" + reset);
+    noteOn(50);
+    console.log(reset + "\n\n\tGenuine parts detected." + reset);
+    console.log(reset + "\n\n\tMainframe opperational!" + reset);
+    noteOff(52);
+    playRecording(succEffect);
+    thought ("Congratulations! Game finished.", 15, 6.5)
+}   
+    return "Locked out"; 
+  }
 
 window.__defineGetter__("repair", repairs);
 
 var talkedToRobot = false;
-
+var getPart = false;
+var repairAttempt = false
+const portal = [204,205,206,207];
 const train = [375,376,377,343,344,345,349,350,351,381,382,383];
+const part = [419];
 const sign  = [160];
 const robot = [10];
 const castle = [259];
@@ -317,10 +337,27 @@ function action(entity) {
             read("The Cobaltfield", "One of the richest deposits of cobalt.", "Cobalt is commonly used in batteries.");
         }
     } else if (robot.includes(entity.id)) {
-        if (capacitor && wire && battery) {
+        if (capacitor && wire && battery && (repairAttempt == false) && (getPart == false)) {
+            map3[900] = 419;
             talk(loseEffect, "Incredible! You found all the components! Bad news is, the Mainframe seems to have been covered with Indestructible Epoxy, we will not be able to fix it… Good effort though!");
+            talkedToRobot = !talkedToRobot;
             return;
         }
+
+        if ((repairAttempt == true) && (getPart == false)) {
+
+            talk(talkEffect, "Unfortunately it looks like you will have to find a genuine part to repair the Mainframe. The shifting sands of the north west sometimes uncover genuine parts.");
+            talkedToRobot = !talkedToRobot;
+            return;  
+        }
+
+        if ((repairAttempt == true) && (getPart == true)) {
+
+            talk(talkEffect, "Incredible! You found a genuine part, give the repair another try. <br><br>Try typing 'repair()' in the developer console. (F12)");
+            talkedToRobot = !talkedToRobot;
+            return;  
+        }
+
         if (!talkedToRobot) {
             talk(talkEffect, "'Grand System needs maintenance! Visit the mines of old by train and bring back cobalt, copper and coltan.'<br><br>* You can dig using SPACEBAR.");
         } else {
@@ -339,6 +376,17 @@ function action(entity) {
         thought("Another abandoned place...", 7, 4);
     } else if (tools.includes(entity.id)) {
         thought("It was just left behind...", 7, 4);
+    } else if (part.includes(entity.id) && map == map3) {
+        thought("You get a genuine part!", 7, 4);
+        getPart = true;
+        map3[900] = -1;
+        load (map3);
+    } else if (portal.includes(entity.id) && map == map0) {
+        map = map5;
+        reload(map5);
+    } else if (portal.includes(entity.id) && map == map5) {
+        map = map0;
+        reload(map0);
     } else if (fnote.includes(entity.id)) {
         if (map == map1) {
             notep("'There is no more ore pure enough in these parts, I’m moving the kids east so we can find some work there, noone buys what we mine here anymore.'");
@@ -399,6 +447,7 @@ function move(event) {
         }, 100);
         setTimeout(function() {
             player.ty = 0;
+            player.tx = body; //change to choose different character body
             requestAnimationFrame(draw);
             moving = false;
         }, 200); 
