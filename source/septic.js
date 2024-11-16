@@ -122,6 +122,8 @@ const map3 = [INCLUDE(map3.csv)];
 
 const route = [INCLUDE(route.csv)];
 
+const map5 = [INCLUDE(map5.csv)];
+
 if (localStorage.getItem("map") != null) {
     var storedMap = parseInt(localStorage.getItem("map"));
     if (storedMap == 0) {
@@ -175,8 +177,9 @@ function load() {
     document.getElementById("b0").style.display = 'none';
     document.getElementById("b1").style.display = 'none';
     document.getElementById("b2").style.display = 'none';
-    document.getElementById("b3").style.display = 'none';
+    document.getElementById("b3").style.display = 'none'; 
     document.getElementById("b4").style.display = 'none';
+    document.getElementById("b5").style.display = 'none';
     if (map == route) {
         document.getElementById("b4").style.display = 'block';
     } else if (map == map0) {
@@ -187,6 +190,8 @@ function load() {
         document.getElementById("b2").style.display = 'block';
     } else if (map == map3) {
         document.getElementById("b3").style.display = 'block';
+    } else if (map == map5) {
+        document.getElementById("b5").style.display = 'block';
     }
 }
 

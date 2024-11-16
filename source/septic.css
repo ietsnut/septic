@@ -40,3 +40,7 @@ border {
     border-image: url('INCLUDE(septic.png,FRAME,3,3)') 16 round;
     display: none;
 }
+#b5 {
+    border-image: url('INCLUDE(septic.png,FRAME,6,3)') 16 round;
+    display: none;
+}
