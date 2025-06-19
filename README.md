@@ -18,4 +18,4 @@ While running, it automatically recompiles index.html on file changes.
 
 ![image](https://github.com/user-attachments/assets/be9c5467-4ec4-479b-b714-3efd5864392f)
 
-To compile yourself, run cossmocc -o build.exe build/build.c
+To compile yourself, run cosmocc -o build.exe build/build.c
