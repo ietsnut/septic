@@ -1,4 +1,4 @@
-# a build tool to combine multiple assets into one huge, fat index.html file
+# a tool for combining multiple assets into one huge, fat index.html file
 
 ![image](https://github.com/user-attachments/assets/53a3be5c-8a1c-461b-abf0-9ff94503c43a)
 ![image](https://github.com/user-attachments/assets/d8f5d2bf-0807-4b77-a575-493ce48155f6)
